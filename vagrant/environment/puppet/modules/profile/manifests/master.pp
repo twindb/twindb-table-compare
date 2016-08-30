@@ -5,6 +5,7 @@ class profile::master {
         ensure => present,
         owner => 'mysql',
         source => 'puppet:///modules/profile/my-master.cnf',
-        notify => Service['mysql']
+        notify => Service['mysql'],
+        require => Package['Percona-Server-server-56']
     }
 }
