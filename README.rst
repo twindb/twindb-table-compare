@@ -18,17 +18,28 @@ TwinDB Table Compare
      :alt: Updates
 
 
-TwinDB Table Compare reads percona.checksums from the master and slave and shows what records are difference if there are any inconsistencies.
+TwinDB Table Compare reads percona.checksums from the master and slave and shows what records are difference
+    if there are any inconsistencies.
 
 
 * Free software: Apache Software License 2.0
 * Documentation: https://twindb-table-compare.readthedocs.io.
 
 
-Features
+Usage
 --------
 
-* TODO
+TwinDB Table Compare should be used in the command line.
+
+This will show differences in data between *slave* and its master.
+
+``twindb_table_compare`` *slave*
+
+
+where *slave* is a hostname of a MySQL slave.
+
+Run ``twindb_table_compare --help`` for other options.
+
 
 Credits
 ---------

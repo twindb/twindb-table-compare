@@ -2,6 +2,13 @@
 Usage
 =====
 
-To use TwinDB Table Compare in a project::
+TwinDB Table Compare should be used in the command line.
 
-    import twindb_table_compare
+This will show differences in data between *slave* and its master.
+
+``twindb_table_compare`` *slave*
+
+
+where *slave* is a hostname of a MySQL slave.
+
+Run ``twindb_table_compare --help`` for other options.
