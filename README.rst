@@ -18,8 +18,7 @@ TwinDB Table Compare
      :alt: Updates
 
 
-TwinDB Table Compare reads percona.checksums from the master and slave and shows what records are difference
-    if there are any inconsistencies.
+TwinDB Table Compare reads percona.checksums from the master and slave and shows what records are difference if there are any inconsistencies.
 
 
 * Free software: Apache Software License 2.0
