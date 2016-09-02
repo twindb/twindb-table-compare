@@ -65,14 +65,26 @@ password=qwerty
     retries => 3
   }
 
+    package { 'epel-release':
+        provider => rpm,
+        source => 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm'
+    }
+
   $packages = [ 'vim-enhanced', 'nmap-ncat',
     'Percona-Server-client-56', 'Percona-Server-server-56',
-    'Percona-Server-devel-56', 'Percona-Server-shared-56', 'percona-toolkit']
+    'Percona-Server-devel-56', 'Percona-Server-shared-56', 'percona-toolkit',
+    'python-pip']
 
   package { $packages:
     ensure => installed,
-    require => [Yumrepo['Percona']]
+    require => [Yumrepo['Percona'], Package['epel-release']]
   }
+
+    package { ['tox']:
+        ensure => installed,
+        provider => pip,
+        require => Package['python-pip']
+    }
 
   service { 'mysql':
     ensure => running,

@@ -3,6 +3,7 @@ import os
 
 import click
 import pwd
+import twindb_table_compare
 
 
 @click.command()
@@ -15,14 +16,18 @@ import pwd
 @click.option('--tbl', default='checksums',
               help='Table with checksums')
 @click.argument('slave', default='localhost', required=False)
-def main(user, password, slave):
+def main(user, password, db, tbl, slave):
     """twindb_table_compare reads percona.checksums from the master and slave
     and shows records that differ if there are any inconsistencies."""
 
-    print('User: %s' % user)
-    print('Password: %s' % password)
-    print('Slave: %s' % slave)
-
+    for d, t in twindb_table_compare.get_inconsistent_tables(slave,
+                                                             user,
+                                                             password,
+                                                             ch_db=db,
+                                                             ch_tbl=tbl):
+        twindb_table_compare.get_inconsistencies(d, t, slave, user,
+                                                 password,
+                                                 ch_db=db, ch_tbl=tbl)
 
 if __name__ == "__main__":
     main()
