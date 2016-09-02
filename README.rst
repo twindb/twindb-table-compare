@@ -6,15 +6,15 @@ TwinDB Table Compare
 .. image:: https://img.shields.io/pypi/v/twindb_table_compare.svg
         :target: https://pypi.python.org/pypi/twindb_table_compare
 
-.. image:: https://img.shields.io/travis/akuzminsky/twindb_table_compare.svg
-        :target: https://travis-ci.org/akuzminsky/twindb_table_compare
+.. image:: https://img.shields.io/travis/twindb/twindb_table_compare.svg
+        :target: https://travis-ci.org/twindb/twindb_table_compare
 
 .. image:: https://readthedocs.org/projects/twindb-table-compare/badge/?version=latest
         :target: https://twindb-table-compare.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/akuzminsky/twindb_table_compare/shield.svg
-     :target: https://pyup.io/repos/github/akuzminsky/twindb_table_compare/
+.. image:: https://pyup.io/repos/github/twindb/twindb_table_compare/shield.svg
+     :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
      :alt: Updates
 
 
