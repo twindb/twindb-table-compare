@@ -25,7 +25,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Aleksandr Kuzminsky",
     author_email='aleks@twindb.com',
-    url='https://github.com/akuzminsky/twindb_table_compare',
+    url='https://github.com/twindb/twindb_table_compare',
     packages=[
         'twindb_table_compare',
     ],
