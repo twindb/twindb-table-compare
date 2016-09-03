@@ -11,7 +11,7 @@ import sys
 
 class ColorizingStreamHandler(logging.StreamHandler):
     def __init__(self):
-        super(ColorizingStreamHandler, self).__init__(stream=sys.stdout)
+        logging.StreamHandler.__init__(self, sys.stdout)
 
     # color names to indices
     color_map = {
