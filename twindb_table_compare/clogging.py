@@ -6,9 +6,13 @@ import ctypes
 import logging
 import logging.handlers
 import os
+import sys
 
 
 class ColorizingStreamHandler(logging.StreamHandler):
+    def __init__(self):
+        super(ColorizingStreamHandler, self).__init__(stream=sys.stdout)
+
     # color names to indices
     color_map = {
         'black': 0,
