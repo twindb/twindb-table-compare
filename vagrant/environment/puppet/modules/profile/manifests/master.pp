@@ -44,6 +44,6 @@ class profile::master {
         require => [ Service['mysql'], Exec['Create table for checksumming'],
             File["/home/${profile::base::user}/.my.cnf"]],
         unless => 'mysql -e "SHOW TABLES FROM percona"',
-        returns => 16
+        returns => [16, 8]
     }
 }

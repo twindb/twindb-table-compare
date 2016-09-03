@@ -11,10 +11,8 @@ import binascii
 import MySQLdb
 import pytest
 
-from contextlib import contextmanager
 from click.testing import CliRunner
 
-from twindb_table_compare import twindb_table_compare
 from twindb_table_compare import cli
 from twindb_table_compare.twindb_table_compare import is_printable, \
     get_chunk_index, get_index_fields, get_boundary, get_master
