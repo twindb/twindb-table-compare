@@ -42,7 +42,7 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
+clean-test: clean-pyc ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
@@ -50,16 +50,22 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 twindb_table_compare tests
 
-test: ## run tests quickly with the default Python
+vagrant-up:
+	cd vagrant && vagrant up
+
+vagrant-provision:
+	cd vagrant && vagrant provision
+
+test: lint vagrant-up vagrant-provision ## run tests quickly with the default Python
 	py.test
-	
+
 
 test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source twindb_table_compare py.test
-	
+
 		coverage report -m
 		coverage html
 		$(BROWSER) htmlcov/index.html
