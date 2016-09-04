@@ -9,4 +9,4 @@ coverage==4.2
 Sphinx==1.4.4
 PyYAML==3.12
 pytest==3.0.2
-mysql
+mysql==0.0.2
