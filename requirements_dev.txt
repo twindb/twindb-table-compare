@@ -8,5 +8,5 @@ tox==2.3.1
 coverage==4.1
 Sphinx==1.4.4
 PyYAML==3.11
-pytest==2.9.2
+pytest==3.0.2
 mysql
