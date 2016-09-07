@@ -10,18 +10,18 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'Click>=6.0',
-    # TODO: put package requirements here
+    'Click>=6.6',
     'mysql'
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'Click>=6.6',
+    'mysql'
 ]
 
 setup(
     name='twindb_table_compare',
-    version='0.3.2',
+    version='0.3.3',
     description="TwinDB Table Compare reads percona.checksums from the master "
                 "and slave and shows what records are difference "
                 "if there are any inconsistencies.",
