@@ -2,4 +2,4 @@
 
 __author__ = 'Aleksandr Kuzminsky'
 __email__ = 'aleks@twindb.com'
-__version__ = '0.3.2'
+__version__ = '0.3.3'
