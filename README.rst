@@ -2,6 +2,10 @@
 TwinDB Table Compare
 ===============================
 
+.. image:: https://badges.gitter.im/twindb/twindb_table_compare.svg
+   :alt: Join the chat at https://gitter.im/twindb/twindb_table_compare
+   :target: https://gitter.im/twindb/twindb_table_compare?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 
 .. image:: https://img.shields.io/pypi/v/twindb_table_compare.svg
         :target: https://pypi.python.org/pypi/twindb_table_compare
