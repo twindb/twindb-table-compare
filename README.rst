@@ -21,6 +21,19 @@ TwinDB Table Compare
      :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
      :alt: Updates
 
+.. image:: https://pyup.io/repos/github/twindb/twindb_table_compare/shield.svg
+     :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
+     :alt: Updates
+
+.. image:: https://img.shields.io/github/downloads/twindb/twindb_table_compare/total.svg?maxAge=2592000   
+     :target: https://github.com/twindb/twindb_table_compare/releases
+     :alt: GitHub
+
+
+.. image:: https://img.shields.io/pypi/dd/Django.svg?maxAge=2592000
+     :target: https://pypi.python.org/pypi/twindb-table-compare
+     :alt: Pypi
+
 
 TwinDB Table Compare reads percona.checksums from the master and slave and shows what records are difference if there are any inconsistencies.
 
