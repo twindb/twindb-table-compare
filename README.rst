@@ -21,10 +21,6 @@ TwinDB Table Compare
      :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
      :alt: Updates
 
-.. image:: https://pyup.io/repos/github/twindb/twindb_table_compare/shield.svg
-     :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
-     :alt: Updates
-
 .. image:: https://img.shields.io/github/downloads/twindb/twindb_table_compare/total.svg?maxAge=2592000   
      :target: https://github.com/twindb/twindb_table_compare/releases
      :alt: GitHub
