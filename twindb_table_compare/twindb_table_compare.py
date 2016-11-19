@@ -53,6 +53,7 @@ def get_chunk_index(connection, db, tbl, chunk,
     query = "SELECT chunk_index FROM `%s`.`%s` " \
             "WHERE db='%s' AND tbl='%s' AND chunk = %s"
 
+    log.info('Executing %s' % query % (ch_db, ch_tbl, db, tbl, chunk))
     cur.execute(query % (ch_db, ch_tbl, db, tbl, chunk))
     return cur.fetchone()[0]
 
@@ -73,6 +74,7 @@ def get_index_fields(connection, db, tbl, index):
             "AND TABLE_NAME='%s' " \
             "AND INDEX_NAME='%s' " \
             "ORDER BY SEQ_IN_INDEX"
+    log.info('Executing %s' % query % (db, tbl, index))
     cur.execute(query % (db, tbl, index))
     cols = []
     for row in cur.fetchall():
@@ -95,6 +97,7 @@ def get_boundary(connection, db, tbl, chunk,
     cur = connection.cursor()
     query = "SELECT lower_boundary, upper_boundary FROM `%s`.`%s` " \
             "WHERE db='%s' AND tbl='%s' AND chunk = %s"
+    log.info('Executing %s' % query % (ch_db, ch_tbl, db, tbl, chunk))
     cur.execute(query % (ch_db, ch_tbl, db, tbl, chunk))
     return cur.fetchone()
 
@@ -108,6 +111,7 @@ def get_master(connection):
     """
     cur = connection.cursor(MySQLdb.cursors.DictCursor)
     query = "SHOW SLAVE STATUS"
+    log.info('Executing %s' % query)
     cur.execute(query)
     return cur.fetchone()['Master_Host']
 
@@ -139,7 +143,8 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
         # generate WHERE clause to fetch records of the chunk
         for chunk, in chunks:
             log.info("# %s.%s, chunk %d" % (db, tbl, chunk))
-            chunk_index = get_chunk_index(conn_slave, db, tbl, chunk)
+            chunk_index = get_chunk_index(conn_slave, db, tbl, chunk,
+                                          ch_db=ch_db, ch_tbl=ch_tbl)
             log.info("# chunk index: %s" % chunk_index)
             where = "WHERE"
             if chunk_index:
@@ -149,7 +154,9 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
                                                 chunk_index)
                 index_field_last = index_fields[len(index_fields) - 1]
                 lower_boundary, upper_boundary = get_boundary(conn_slave,
-                                                              db, tbl, chunk)
+                                                              db, tbl, chunk,
+                                                              ch_db=ch_db,
+                                                              ch_tbl=ch_tbl)
                 lower_boundaries = lower_boundary.split(",")
                 upper_boundaries = upper_boundary.split(",")
                 # generate lower boundary clause
@@ -234,6 +241,7 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
                 os.write(master_f, "\n")
             os.close(master_f)
 
+            log.info("Executing: %s" % query % (db, tbl, where))
             cur_slave.execute(query % (db, tbl, where))
             result = cur_slave.fetchall()
             for row in result:
