@@ -73,7 +73,7 @@ password=qwerty
   $packages = [ 'vim-enhanced', 'nmap-ncat',
     'Percona-Server-client-56', 'Percona-Server-server-56',
     'Percona-Server-devel-56', 'Percona-Server-shared-56', 'percona-toolkit',
-    'python-pip']
+    'python-pip', 'gcc', 'python-devel', 'zlib-devel', 'openssl-devel']
 
   package { $packages:
     ensure => installed,
