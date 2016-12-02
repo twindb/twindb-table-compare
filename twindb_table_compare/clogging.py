@@ -150,5 +150,6 @@ def main():
     logging.error('ERROR')
     logging.critical('CRITICAL')
 
+
 if __name__ == '__main__':
     main()

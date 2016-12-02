@@ -17,11 +17,15 @@ nodes = [
 VAGRANTFILE_API_VERSION = '2'
 
 $script = <<SCRIPT
-rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
-for i in 1 2 3
-do
-    yum -y install puppet && break
-done
+function install_puppet(){
+    rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+    for i in 1 2 3
+    do
+        yum -y install puppet && break
+    done
+}
+
+which puppet || install_puppet
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
