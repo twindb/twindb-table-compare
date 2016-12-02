@@ -29,5 +29,6 @@ def main(user, password, db, tbl, slave):
                                                  password,
                                                  ch_db=db, ch_tbl=tbl)
 
+
 if __name__ == "__main__":
     main()

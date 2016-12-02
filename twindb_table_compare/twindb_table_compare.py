@@ -5,7 +5,8 @@ import string
 import tempfile
 import MySQLdb
 import binascii
-import subprocess
+from difflib import unified_diff
+import sys
 import clogging
 
 log = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ def setup_logging(logger, debug=False):
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
 
 setup_logging(log)
 
@@ -114,6 +116,35 @@ def get_master(connection):
     log.info('Executing %s' % query)
     cur.execute(query)
     return cur.fetchone()['Master_Host']
+
+
+# Colorize diff
+# http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+def _green(line):
+    if sys.stdout.isatty():
+        return '\033[92m' + line + '\033[0m'
+    else:
+        return line
+
+
+def _red(line):
+    if sys.stdout.isatty():
+        return '\033[91m' + line + '\033[0m'
+    else:
+        return line
+
+
+def diff(master_lines, slave_lines):
+    result = ""
+    for line in unified_diff(sorted(master_lines), sorted(slave_lines)):
+        if not line.startswith('---') and not line.startswith('+++'):
+            if line.startswith('+'):
+                result += _green(line)
+            elif line.startswith('-'):
+                result += _red(line)
+            else:
+                result += line
+    return result
 
 
 def get_inconsistencies(db, tbl, slave, user, passwd,
@@ -255,16 +286,11 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
                 os.write(slave_f, "\n")
             os.close(slave_f)
 
-            # Feed diff with the records from the master and slave
-            # to show the difference to a user
-            cmd = ["diff", "-u", master_filename, slave_filename]
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-            cout, cerr = proc.communicate()
-            log.info("Differences between slave %s and its master:\n"
-                     % slave + cout)
-            if cerr:
-                log.error(cerr)
+            diffs = diff(open(master_filename).readlines(),
+                         open(slave_filename).readlines())
+            log.info("Differences between slave %s and its master:" % slave)
+            print(diffs)
+
             os.remove(master_filename)
             os.remove(slave_filename)
     except MySQLdb.Error as err:
