@@ -10,12 +10,14 @@ deploy:
   provider: pypi
   user: twindb
 env:
+- TOXENV=flake8
+- TOXENV=cov
 - TOXENV=py27
 - TOXENV=py26
-- TOXENV=pypy
-- TOXENV=cov
-- TOXENV=flake8
 install: pip install -U tox
 language: python
 python: 2.7
 script: tox -e ${TOXENV}
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
