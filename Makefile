@@ -63,13 +63,6 @@ test: lint vagrant-up vagrant-provision ## run tests quickly with the default Py
 test-all: ## run tests on every Python version with tox
 	tox
 
-coverage: ## check code coverage quickly with the default Python
-	coverage run --source twindb_table_compare py.test
-
-		coverage report -m
-		coverage html
-		$(BROWSER) htmlcov/index.html
-
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/twindb_table_compare.rst
 	rm -f docs/modules.rst
