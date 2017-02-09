@@ -17,6 +17,12 @@ nodes = [
 VAGRANTFILE_API_VERSION = '2'
 
 $script = <<SCRIPT
+
+if [[ $(cat /sys/class/net/enp0s8/operstate) != 'up' ]]; then
+    service network restart
+fi
+
+
 function install_puppet(){
     rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
     for i in 1 2 3
