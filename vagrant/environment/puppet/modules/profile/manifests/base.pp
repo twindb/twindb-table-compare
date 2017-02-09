@@ -66,14 +66,13 @@ password=qwerty
   }
 
     package { 'epel-release':
-        provider => rpm,
-        source => 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm'
+        ensure => latest
     }
 
   $packages = [ 'vim-enhanced', 'nmap-ncat',
     'Percona-Server-client-56', 'Percona-Server-server-56',
     'Percona-Server-devel-56', 'Percona-Server-shared-56', 'percona-toolkit',
-    'python-pip', 'gcc', 'python-devel', 'zlib-devel', 'openssl-devel']
+    'python2-pip', 'gcc', 'python-devel', 'zlib-devel', 'openssl-devel']
 
   package { $packages:
     ensure => installed,
@@ -83,7 +82,7 @@ password=qwerty
     package { ['tox']:
         ensure => installed,
         provider => pip,
-        require => Package['python-pip']
+        require => Package['python2-pip']
     }
 
   service { 'mysql':
