@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='twindb_table_compare',
-    version='1.0.1',
+    version='1.0.2',
     description="TwinDB Table Compare reads percona.checksums from the master "
                 "and slave and shows what records are difference "
                 "if there are any inconsistencies.",
