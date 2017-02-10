@@ -48,7 +48,7 @@ clean-test: clean-pyc ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style with flake8
-	flake8 twindb_table_compare tests
+	tox -e flake8
 
 vagrant-up:
 	cd vagrant && vagrant up
@@ -56,8 +56,26 @@ vagrant-up:
 vagrant-provision:
 	cd vagrant && vagrant provision
 
-test: lint vagrant-up vagrant-provision ## run tests quickly with the default Python
-	py.test
+.PHONY: bootstrap
+bootstrap: ## bootstrap the development environment
+	pip install -U "setuptools==32.3.1"
+	pip install -U "pip==9.0.1"
+	pip install -U "pip-tools>=1.6.0"
+	pip-sync requirements.txt requirements_dev.txt
+	pip install --editable .
+
+.PHONY: rebuild-requirements
+rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
+	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
+	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
+
+.PHONY: upgrade-requirements
+upgrade-requirements: ## Upgrade requirements
+	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
+	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
+
+test:  ## run tests quickly with the default Python
+	py.test -vx tests/unit/
 
 
 test-all: ## run tests on every Python version with tox
