@@ -7,6 +7,9 @@ import MySQLdb
 import binascii
 from difflib import unified_diff
 import sys
+
+from subprocess import Popen, PIPE
+
 import clogging
 
 log = logging.getLogger(__name__)
@@ -138,17 +141,196 @@ def diff(master_lines, slave_lines):
     result = ""
     for line in unified_diff(sorted(master_lines), sorted(slave_lines)):
         if not line.startswith('---') and not line.startswith('+++'):
+            if not line.endswith('\n'):
+                # print(result)
+                line += '\n'
+            pass
             if line.startswith('+'):
                 result += _green(line)
             elif line.startswith('-'):
                 result += _red(line)
             else:
                 result += line
+
     return result
 
 
+def get_fileds(conn, db, tbl):
+    query = "SELECT COLUMN_NAME, DATA_TYPE " \
+            "FROM information_schema.COLUMNS " \
+            "WHERE TABLE_SCHEMA='{db}' AND TABLE_NAME='{tbl}' " \
+            "ORDER BY ORDINAL_POSITION".format(db=db, tbl=tbl)
+    cursor = conn.cursor()
+    cursor.execute(query)
+
+    fields = []
+    for row in cursor.fetchall():
+        col_name = row[0]
+        col_type = row[1]
+        if col_type in ['blob', 'binary']:
+            col_name = 'HEX(%s)' % col_name
+
+        fields.append(col_name)
+
+    return ', '.join(fields)
+
+
+def build_chunk_query(db, tbl, chunk, conn, ch_db='percona',
+                      ch_tbl='checksusm'):
+
+    log.info("# %s.%s, chunk %d" % (db, tbl, chunk))
+    chunk_index = get_chunk_index(conn, db, tbl, chunk,
+                                  ch_db=ch_db, ch_tbl=ch_tbl)
+    log.info("# chunk index: %s" % chunk_index)
+    where = "WHERE"
+    if chunk_index:
+        index_fields = get_index_fields(conn,
+                                        db,
+                                        tbl,
+                                        chunk_index)
+        index_field_last = index_fields[len(index_fields) - 1]
+        lower_boundary, upper_boundary = get_boundary(conn,
+                                                      db, tbl, chunk,
+                                                      ch_db=ch_db,
+                                                      ch_tbl=ch_tbl)
+        lower_boundaries = lower_boundary.split(",")
+        upper_boundaries = upper_boundary.split(",")
+        # generate lower boundary clause
+        clause_fields = []
+        v_num = 0
+        where += " (0 "
+        op = ">"
+        for index_field in index_fields:
+            clause_fields.append(index_field)
+            where += " OR ( 1"
+            for clause_field in clause_fields:
+                if clause_field == clause_fields[len(clause_fields) - 1]:
+                    if clause_field == index_field_last:
+                        op = ">="
+                    else:
+                        op = ">"
+                v = lower_boundaries[v_num]
+                v_num += 1
+                if is_printable(v):
+                    where += (" AND `%s` %s '%s'"
+                              % (clause_field, op, v))
+                else:
+                    v = ("UNHEX('%s')"
+                         % binascii.hexlify(str(v)))
+                    where += (" AND `%s` %s %s"
+                              % (clause_field, op, v))
+                op = "="
+            where += " )"
+        where += " )"
+
+        # generate upper boundary clause
+        clause_fields = []
+        v_num = 0
+        where += " AND ( 0"
+        op = "<"
+        for index_field in index_fields:
+            clause_fields.append(index_field)
+            where += " OR ( 1"
+            for clause_field in clause_fields:
+                if clause_field == clause_fields[len(clause_fields) - 1]:
+                    if clause_field == index_field_last:
+                        op = "<="
+                    else:
+                        op = "<"
+                v = upper_boundaries[v_num]
+                v_num += 1
+                if is_printable(v):
+                    where += (" AND `%s` %s '%s'"
+                              % (clause_field, op, v))
+                else:
+                    v = ("UNHEX('%s')"
+                         % binascii.hexlify(str(v)))
+                    where += (" AND `%s` %s %s"
+                              % (clause_field, op, v))
+                op = "="
+            where += " )"
+        where += " )"
+    else:
+        where += " 1"
+
+    fields = get_fileds(conn, db, tbl)
+    query = "SELECT %s FROM `%s`.`%s` %s" % (fields, db, tbl, where)
+
+    return query
+
+
+def print_horizontal(cur_master, cur_slave, query):
+
+    log.info("Executing: %s" % query)
+
+    master_f, master_filename = tempfile.mkstemp(prefix="master.")
+    slave_f, slave_filename = tempfile.mkstemp(prefix="slave.")
+    # Now fetch records from the master and slave
+    # and write them to temporary files
+    # If a field contains unprintable characters print the field in HEX
+    cur_master.execute(query)
+    result = cur_master.fetchall()
+
+    for row in result:
+        for field in row:
+            # print(field)
+            if is_printable(str(field)):
+                os.write(master_f, str(field))
+            else:
+                # pprint HEX-ed string
+                os.write(master_f, binascii.hexlify(str(field)))
+            os.write(master_f, "\t")
+        os.write(master_f, "\n")
+    os.close(master_f)
+
+    log.info("Executing: %s" % query)
+    cur_slave.execute(query)
+    result = cur_slave.fetchall()
+    for row in result:
+        for field in row:
+            if is_printable(str(field)):
+                os.write(slave_f, str(field))
+            else:
+                # pprint HEX-ed string
+                os.write(slave_f, binascii.hexlify(str(field)))
+            os.write(slave_f, "\t")
+        os.write(slave_f, "\n")
+    os.close(slave_f)
+
+    diffs = diff(open(master_filename).readlines(),
+                 open(slave_filename).readlines())
+    os.remove(master_filename)
+    os.remove(slave_filename)
+    return diffs
+
+
+def print_vertical(master, slave, user, passwd, query):
+    log.info("Executing: %s" % query)
+
+    proc = Popen(['mysql', '-h', master, '-u', user, '-p%s' % passwd,
+                  '-e', '%s\G' % query],
+                 stdout=PIPE, stderr=PIPE)
+    master_cout, master_cerr = proc.communicate()
+    if proc.returncode:
+        log.error('Failed to query master.')
+        log.error(master_cerr)
+        exit(1)
+
+    log.info("Executing: %s" % query)
+    proc = Popen(['mysql', '-h', slave, '-u', user, '-p%s' % passwd,
+                  '-e', '%s\G' % query],
+                 stdout=PIPE, stderr=PIPE)
+    slave_cout, slave_cerr = proc.communicate()
+    if proc.returncode:
+        log.error('Failed to query slave.')
+        log.error(slave_cerr)
+        exit(1)
+
+    return diff(master_cout.split('\n'), slave_cout.split('\n'))
+
+
 def get_inconsistencies(db, tbl, slave, user, passwd,
-                        ch_db='percona', ch_tbl='checksums'):
+                        ch_db='percona', ch_tbl='checksums', vertical=False):
     try:
         conn_slave = MySQLdb.connect(host=slave, user=user, passwd=passwd)
         master = get_master(conn_slave)
@@ -173,126 +355,19 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
         log.info("Found %d inconsistent %s" % (len(chunks), chunks_str))
         # generate WHERE clause to fetch records of the chunk
         for chunk, in chunks:
-            log.info("# %s.%s, chunk %d" % (db, tbl, chunk))
-            chunk_index = get_chunk_index(conn_slave, db, tbl, chunk,
-                                          ch_db=ch_db, ch_tbl=ch_tbl)
-            log.info("# chunk index: %s" % chunk_index)
-            where = "WHERE"
-            if chunk_index:
-                index_fields = get_index_fields(conn_slave,
-                                                db,
-                                                tbl,
-                                                chunk_index)
-                index_field_last = index_fields[len(index_fields) - 1]
-                lower_boundary, upper_boundary = get_boundary(conn_slave,
-                                                              db, tbl, chunk,
-                                                              ch_db=ch_db,
-                                                              ch_tbl=ch_tbl)
-                lower_boundaries = lower_boundary.split(",")
-                upper_boundaries = upper_boundary.split(",")
-                # generate lower boundary clause
-                clause_fields = []
-                v_num = 0
-                where += " (0 "
-                op = ">"
-                for index_field in index_fields:
-                    clause_fields.append(index_field)
-                    where += " OR ( 1"
-                    for clause_field in clause_fields:
-                        if clause_field == \
-                                clause_fields[len(clause_fields) - 1]:
-                            if clause_field == index_field_last:
-                                op = ">="
-                            else:
-                                op = ">"
-                        v = lower_boundaries[v_num]
-                        v_num += 1
-                        if is_printable(v):
-                            where += (" AND `%s` %s '%s'"
-                                      % (clause_field, op, v))
-                        else:
-                            v = ("UNHEX('%s')"
-                                 % binascii.hexlify(str(v)))
-                            where += (" AND `%s` %s %s"
-                                      % (clause_field, op, v))
-                        op = "="
-                    where += " )"
-                where += " )"
 
-                # generate upper boundary clause
-                clause_fields = []
-                v_num = 0
-                where += " AND ( 0"
-                op = "<"
-                for index_field in index_fields:
-                    clause_fields.append(index_field)
-                    where += " OR ( 1"
-                    for clause_field in clause_fields:
-                        if clause_field == \
-                                clause_fields[len(clause_fields) - 1]:
-                            if clause_field == index_field_last:
-                                op = "<="
-                            else:
-                                op = "<"
-                        v = upper_boundaries[v_num]
-                        v_num += 1
-                        if is_printable(v):
-                            where += (" AND `%s` %s '%s'"
-                                      % (clause_field, op, v))
-                        else:
-                            v = ("UNHEX('%s')"
-                                 % binascii.hexlify(str(v)))
-                            where += (" AND `%s` %s %s"
-                                      % (clause_field, op, v))
-                        op = "="
-                    where += " )"
-                where += " )"
+            query = build_chunk_query(db, tbl, chunk, conn_slave, ch_db=ch_db,
+                                      ch_tbl=ch_tbl)
+
+            if vertical:
+                diffs = print_vertical(master, slave, user, passwd, query)
             else:
-                where += " 1"
-            query = "SELECT * FROM `%s`.`%s` %s"
-            log.info("Executing: %s" % query % (db, tbl, where))
+                diffs = print_horizontal(cur_master, cur_slave, query)
+                log.info("Differences between slave %s and its master:"
+                         % slave)
 
-            master_f, master_filename = tempfile.mkstemp(prefix="master.")
-            slave_f, slave_filename = tempfile.mkstemp(prefix="slave.")
-            # Now fetch records from the master and slave
-            # and write them to temporary files
-            # If a field contains unprintable characters print the field in HEX
-            cur_master.execute(query % (db, tbl, where))
-            result = cur_master.fetchall()
-
-            for row in result:
-                for field in row:
-                    # print(field)
-                    if is_printable(str(field)):
-                        os.write(master_f, str(field))
-                    else:
-                        # pprint HEX-ed string
-                        os.write(master_f, binascii.hexlify(str(field)))
-                    os.write(master_f, "\t")
-                os.write(master_f, "\n")
-            os.close(master_f)
-
-            log.info("Executing: %s" % query % (db, tbl, where))
-            cur_slave.execute(query % (db, tbl, where))
-            result = cur_slave.fetchall()
-            for row in result:
-                for field in row:
-                    if is_printable(str(field)):
-                        os.write(slave_f, str(field))
-                    else:
-                        # pprint HEX-ed string
-                        os.write(slave_f, binascii.hexlify(str(field)))
-                    os.write(slave_f, "\t")
-                os.write(slave_f, "\n")
-            os.close(slave_f)
-
-            diffs = diff(open(master_filename).readlines(),
-                         open(slave_filename).readlines())
-            log.info("Differences between slave %s and its master:" % slave)
             print(diffs)
 
-            os.remove(master_filename)
-            os.remove(slave_filename)
     except MySQLdb.Error as err:
         log.error(err)
 

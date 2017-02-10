@@ -13,6 +13,10 @@ TwinDB Table Compare
 .. image:: https://img.shields.io/travis/twindb/twindb_table_compare.svg
         :target: https://travis-ci.org/twindb/twindb_table_compare
 
+.. image:: https://img.shields.io/codecov/c/github/twindb/twindb_table_compare.svg
+        :target: https://codecov.io/gh/twindb/twindb_table_compare
+        :alt: Code test coverage
+
 .. image:: https://readthedocs.org/projects/twindb-table-compare/badge/?version=latest
         :target: https://twindb-table-compare.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
@@ -20,11 +24,6 @@ TwinDB Table Compare
 .. image:: https://pyup.io/repos/github/twindb/twindb_table_compare/shield.svg
      :target: https://pyup.io/repos/github/twindb/twindb_table_compare/
      :alt: Updates
-
-.. image:: https://img.shields.io/github/downloads/twindb/twindb_table_compare/total.svg?maxAge=2592000   
-     :target: https://github.com/twindb/twindb_table_compare/releases
-     :alt: GitHub
-
 
 .. image:: https://img.shields.io/pypi/dd/Django.svg?maxAge=2592000
      :target: https://pypi.python.org/pypi/twindb-table-compare
@@ -67,7 +66,7 @@ where *slave* is a hostname of a MySQL slave.
     -master.box root 1 2016-09-03 20:02:28
     +localhost root 1 2016-09-03 20:10:04
     +slave.box root 1 2016-09-03 20:10:04
-    
+
     2016-09-03 22:48:01,746: INFO: twindb_table_compare.get_inconsistencies():127: Executing: SELECT chunk FROM `percona`.`checksums` WHERE (this_crc&lt;&gt;master_crc OR this_cnt&lt;&gt;master_cnt) AND db='mysql' AND tbl='user'
     2016-09-03 22:48:01,747: INFO: twindb_table_compare.get_inconsistencies():138: Found 1 inconsistent chunk
     2016-09-03 22:48:01,747: INFO: twindb_table_compare.get_inconsistencies():141: # mysql.user, chunk 1

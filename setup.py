@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from pip.req import parse_requirements
 from setuptools import setup
 
 with open('README.rst') as readme_file:
@@ -9,19 +9,16 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    'Click>=6.6',
-    'mysql'
-]
 
-test_requirements = [
-    'Click>=6.6',
-    'mysql'
-]
+requirements = [str(ir.req) for ir in
+                parse_requirements('requirements.txt', session=False)]
+
+test_requirements = [str(ir.req) for ir in
+                     parse_requirements('requirements_dev.txt', session=False)]
 
 setup(
     name='twindb_table_compare',
-    version='0.3.4',
+    version='1.0.2',
     description="TwinDB Table Compare reads percona.checksums from the master "
                 "and slave and shows what records are difference "
                 "if there are any inconsistencies.",
