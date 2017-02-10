@@ -141,14 +141,17 @@ def diff(master_lines, slave_lines):
     result = ""
     for line in unified_diff(sorted(master_lines), sorted(slave_lines)):
         if not line.startswith('---') and not line.startswith('+++'):
+            if not line.endswith('\n'):
+                # print(result)
+                line += '\n'
+            pass
             if line.startswith('+'):
                 result += _green(line)
             elif line.startswith('-'):
                 result += _red(line)
             else:
                 result += line
-        if not result.endswith('\n'):
-            result += '\n'
+
     return result
 
 
@@ -172,7 +175,8 @@ def get_fileds(conn, db, tbl):
     return ', '.join(fields)
 
 
-def build_chunk_query(db, tbl, chunk, conn, ch_db='percona', ch_tbl='checksusm'):
+def build_chunk_query(db, tbl, chunk, conn, ch_db='percona',
+                      ch_tbl='checksusm'):
 
     log.info("# %s.%s, chunk %d" % (db, tbl, chunk))
     chunk_index = get_chunk_index(conn, db, tbl, chunk,
@@ -303,7 +307,8 @@ def print_horizontal(cur_master, cur_slave, query):
 def print_vertical(master, slave, user, passwd, query):
     log.info("Executing: %s" % query)
 
-    proc = Popen(['mysql', '-h', master, '-u', user, '-p%s' % passwd, '-e', '%s\G' % query],
+    proc = Popen(['mysql', '-h', master, '-u', user, '-p%s' % passwd,
+                  '-e', '%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     master_cout, master_cerr = proc.communicate()
     if proc.returncode:
@@ -312,7 +317,8 @@ def print_vertical(master, slave, user, passwd, query):
         exit(1)
 
     log.info("Executing: %s" % query)
-    proc = Popen(['mysql', '-h', slave, '-u', user, '-p%s' % passwd, '-e', '%s\G' % query],
+    proc = Popen(['mysql', '-h', slave, '-u', user, '-p%s' % passwd,
+                  '-e', '%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     slave_cout, slave_cerr = proc.communicate()
     if proc.returncode:
@@ -350,13 +356,15 @@ def get_inconsistencies(db, tbl, slave, user, passwd,
         # generate WHERE clause to fetch records of the chunk
         for chunk, in chunks:
 
-            query = build_chunk_query(db, tbl, chunk, conn_slave, ch_db=ch_db, ch_tbl=ch_tbl)
+            query = build_chunk_query(db, tbl, chunk, conn_slave, ch_db=ch_db,
+                                      ch_tbl=ch_tbl)
 
             if vertical:
                 diffs = print_vertical(master, slave, user, passwd, query)
             else:
                 diffs = print_horizontal(cur_master, cur_slave, query)
-                log.info("Differences between slave %s and its master:" % slave)
+                log.info("Differences between slave %s and its master:"
+                         % slave)
 
             print(diffs)
 

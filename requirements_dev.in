@@ -1,0 +1,9 @@
+bumpversion
+flake8
+tox
+pytest
+mock
+coverage
+codecov
+pytest-cov
+Sphinx

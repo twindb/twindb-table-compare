@@ -16,7 +16,8 @@ import twindb_table_compare
 @click.option('--tbl', default='checksums',
               help='Table with checksums')
 @click.option('--vertical', default=False, is_flag=True,
-              help='Print result vertically. Otherwise will print one record in one line')
+              help='Print result vertically. '
+                   'Otherwise will print one record in one line')
 @click.argument('slave', default='localhost', required=False)
 def main(user, password, db, tbl, slave, vertical):
     """twindb_table_compare reads percona.checksums from the master and slave
@@ -29,7 +30,8 @@ def main(user, password, db, tbl, slave, vertical):
                                                              ch_tbl=tbl):
         twindb_table_compare.get_inconsistencies(d, t, slave, user,
                                                  password,
-                                                 ch_db=db, ch_tbl=tbl, vertical=vertical)
+                                                 ch_db=db, ch_tbl=tbl,
+                                                 vertical=vertical)
 
 
 if __name__ == "__main__":
