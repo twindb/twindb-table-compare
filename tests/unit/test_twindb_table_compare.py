@@ -8,11 +8,13 @@ test_twindb_table_compare
 Tests for `twindb_table_compare` module.
 """
 import binascii
+
+import mock
 import pytest
 
 from click.testing import CliRunner
 
-from twindb_table_compare import cli
+from twindb_table_compare import cli, __version__
 from twindb_table_compare.twindb_table_compare import is_printable, diff
 
 
@@ -21,6 +23,15 @@ def test_command_line_interface():
     result = runner.invoke(cli.main)
     assert result.exit_code == 0
     help_result = runner.invoke(cli.main, ['--help'])
+    assert help_result.exit_code == 0
+
+
+@mock.patch('twindb_table_compare.cli.twindb_table_compare.get_inconsistent_tables')
+def test_version(mock_get_inconsistent_tables):
+    runner = CliRunner()
+    mock_get_inconsistent_tables.side_effect = Exception
+    help_result = runner.invoke(cli.main, ['--version'])
+    assert help_result.output.strip('\n') == __version__
     assert help_result.exit_code == 0
 
 

@@ -4,6 +4,7 @@ import os
 import click
 import pwd
 import twindb_table_compare
+from . import __version__
 
 
 @click.command()
@@ -18,10 +19,14 @@ import twindb_table_compare
 @click.option('--vertical', default=False, is_flag=True,
               help='Print result vertically. '
                    'Otherwise will print one record in one line')
+@click.option('--version', is_flag=True, help='Print version and exit', default=False)
 @click.argument('slave', default='localhost', required=False)
-def main(user, password, db, tbl, slave, vertical):
+def main(user, password, db, tbl, slave, vertical, version):
     """twindb_table_compare reads percona.checksums from the master and slave
     and shows records that differ if there are any inconsistencies."""
+    if version:
+        print(__version__)
+        exit(0)
 
     for d, t in twindb_table_compare.get_inconsistent_tables(slave,
                                                              user,
