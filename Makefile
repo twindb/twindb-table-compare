@@ -48,7 +48,7 @@ clean-test: clean-pyc ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style with flake8
-	tox -e flake8
+	pylint twindb_table_compare
 
 vagrant-up:
 	cd vagrant && vagrant up
@@ -77,6 +77,8 @@ upgrade-requirements: ## Upgrade requirements
 test:  ## run tests quickly with the default Python
 	py.test -vx tests/unit/
 
+test-functional:  ## run functional tests
+	py.test -vx tests/functional/
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -92,9 +94,8 @@ docs: ## generate Sphinx HTML documentation, including API docs
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
-release: clean ## package and upload a release
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+coverage:
+	py.test --cov=twindb_table_compare --cov-report term-missing tests/unit
 
 dist: clean ## builds source and wheel package
 	python setup.py sdist

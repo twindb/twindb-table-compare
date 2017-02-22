@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
+"""
+Command line routines
+"""
+from __future__ import print_function
+import pwd
 import os
 
+import MySQLdb
 import click
-import pwd
-import twindb_table_compare
-from . import __version__
+
+from twindb_table_compare.compare import get_inconsistencies, \
+    get_inconsistent_tables
+
+from . import __version__, setup_logging, LOG
 
 
 @click.command()
@@ -19,25 +27,33 @@ from . import __version__
 @click.option('--vertical', default=False, is_flag=True,
               help='Print result vertically. '
                    'Otherwise will print one record in one line')
-@click.option('--version', is_flag=True, help='Print version and exit', default=False)
-@click.argument('slave', default='localhost', required=False)
-def main(user, password, db, tbl, slave, vertical, version):
+@click.option('--version', is_flag=True,
+              help='Print version and exit', default=False)
+@click.option('--debug', is_flag=True,
+              help='Print debug messages', default=False)
+@click.option('--color/--no-color', is_flag=True,
+              help='Print colored log messages', default=True)
+@click.argument('slave',
+                default='localhost',
+                required=False)  # pylint: disable=too-many-arguments
+def main(user, password, db, tbl, slave,
+         vertical, debug, version, color):
     """twindb_table_compare reads percona.checksums from the master and slave
     and shows records that differ if there are any inconsistencies."""
     if version:
         print(__version__)
         exit(0)
 
-    for d, t in twindb_table_compare.get_inconsistent_tables(slave,
-                                                             user,
-                                                             password,
-                                                             ch_db=db,
-                                                             ch_tbl=tbl):
-        twindb_table_compare.get_inconsistencies(d, t, slave, user,
-                                                 password,
-                                                 ch_db=db, ch_tbl=tbl,
-                                                 vertical=vertical)
-
-
-if __name__ == "__main__":
-    main()
+    setup_logging(LOG, debug=debug, color=color)
+    try:
+        for database, table in get_inconsistent_tables(slave,
+                                                       user,
+                                                       password,
+                                                       ch_db=db,
+                                                       ch_tbl=tbl):
+            get_inconsistencies(database, table, slave, user, password,
+                                ch_db=db, ch_tbl=tbl,
+                                vertical=vertical, color=color)
+    except MySQLdb.Error as err:  # pylint: disable=no-member
+        LOG.error(err)
+        exit(1)

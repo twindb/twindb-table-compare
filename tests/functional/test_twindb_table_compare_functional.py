@@ -11,10 +11,7 @@ import binascii
 import MySQLdb
 import pytest
 
-from click.testing import CliRunner
-
-from twindb_table_compare import cli
-from twindb_table_compare.twindb_table_compare import is_printable, \
+from twindb_table_compare.compare import is_printable, \
     get_chunk_index, get_index_fields, get_boundary, get_master
 
 
@@ -38,16 +35,6 @@ def slave_connection(mysql_cred):
     return MySQLdb.connect(host='192.168.35.251',
                            user=mysql_cred['user'],
                            passwd=mysql_cred['password'])
-
-
-def test_command_line_interface():
-    runner = CliRunner()
-    result = runner.invoke(cli.main)
-    assert result.exit_code == 0
-    # assert 'twindb_table_compare.cli.main' in result.output
-    help_result = runner.invoke(cli.main, ['--help'])
-    assert help_result.exit_code == 0
-    # assert '--help  Show this message and exit.' in help_result.output
 
 
 @pytest.mark.parametrize('input_str,result', [
