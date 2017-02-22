@@ -10,7 +10,7 @@ deploy:
   provider: pypi
   user: twindb
 env:
-- TOXENV=flake8
+- TOXENV=lint
 - TOXENV=cov
 - TOXENV=py27
 - TOXENV=py26
