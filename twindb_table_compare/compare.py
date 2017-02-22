@@ -1,37 +1,20 @@
 # -*- coding: utf-8 -*-
-import logging
-import os
-import string
-import tempfile
-import MySQLdb
+"""
+Functions to find and print differences
+"""
+from __future__ import print_function
 import binascii
 from difflib import unified_diff
-import sys
-
+import os
+import string
 from subprocess import Popen, PIPE
+import sys
+import tempfile
 
-import clogging
-
-log = logging.getLogger(__name__)
-
-
-def setup_logging(logger, debug=False):
-
-    fmt_str = "%(asctime)s: %(levelname)s:" \
-              " %(module)s.%(funcName)s():%(lineno)d: %(message)s"
-
-    # console_handler = logging.StreamHandler()
-    console_handler = clogging.ColorizingStreamHandler()
-    console_handler.setFormatter(logging.Formatter(fmt_str))
-    logger.handlers = []
-    logger.addHandler(console_handler)
-    if debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+import MySQLdb
 
 
-setup_logging(log)
+from . import LOG
 
 
 def is_printable(str_value):
@@ -43,7 +26,8 @@ def is_printable(str_value):
     return set(str_value).issubset(string.printable)
 
 
-def get_chunk_index(connection, db, tbl, chunk,
+def get_chunk_index(connection, db,  # pylint: disable=too-many-arguments
+                    tbl, chunk,
                     ch_db='percona', ch_tbl='checksums'):
     """
     Get index that was used to cut the chunk
@@ -52,13 +36,15 @@ def get_chunk_index(connection, db, tbl, chunk,
     :param db: database of the chunk
     :param tbl: table of the chunk
     :param chunk: chunk id
+    :param ch_db: Database where checksums are stored. Default percona.
+    :param ch_tbl: Table where checksums are stored. Default checksums.
     :return: index name or None if no index was used
     """
     cur = connection.cursor()
     query = "SELECT chunk_index FROM `%s`.`%s` " \
             "WHERE db='%s' AND tbl='%s' AND chunk = %s"
 
-    log.info('Executing %s' % query % (ch_db, ch_tbl, db, tbl, chunk))
+    LOG.info('Executing %s', query % (ch_db, ch_tbl, db, tbl, chunk))
     cur.execute(query % (ch_db, ch_tbl, db, tbl, chunk))
     return cur.fetchone()[0]
 
@@ -79,7 +65,7 @@ def get_index_fields(connection, db, tbl, index):
             "AND TABLE_NAME='%s' " \
             "AND INDEX_NAME='%s' " \
             "ORDER BY SEQ_IN_INDEX"
-    log.info('Executing %s' % query % (db, tbl, index))
+    LOG.info('Executing %s', query % (db, tbl, index))
     cur.execute(query % (db, tbl, index))
     cols = []
     for row in cur.fetchall():
@@ -87,7 +73,8 @@ def get_index_fields(connection, db, tbl, index):
     return cols
 
 
-def get_boundary(connection, db, tbl, chunk,
+def get_boundary(connection,    # pylint: disable=too-many-arguments
+                 db, tbl, chunk,
                  ch_db='percona', ch_tbl='checksums'):
     """
     Get lower and upper boundary values of a chunk
@@ -102,7 +89,7 @@ def get_boundary(connection, db, tbl, chunk,
     cur = connection.cursor()
     query = "SELECT lower_boundary, upper_boundary FROM `%s`.`%s` " \
             "WHERE db='%s' AND tbl='%s' AND chunk = %s"
-    log.info('Executing %s' % query % (ch_db, ch_tbl, db, tbl, chunk))
+    LOG.info('Executing %s', query % (ch_db, ch_tbl, db, tbl, chunk))
     cur.execute(query % (ch_db, ch_tbl, db, tbl, chunk))
     return cur.fetchone()
 
@@ -116,13 +103,13 @@ def get_master(connection):
     """
     cur = connection.cursor(MySQLdb.cursors.DictCursor)
     query = "SHOW SLAVE STATUS"
-    log.info('Executing %s' % query)
+    LOG.info('Executing %s', query)
     cur.execute(query)
     return cur.fetchone()['Master_Host']
 
 
 # Colorize diff
-# http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+# https://goo.gl/GqSyoj
 def _green(line):
     if sys.stdout.isatty():
         return '\033[92m' + line + '\033[0m'
@@ -137,18 +124,39 @@ def _red(line):
         return line
 
 
-def diff(master_lines, slave_lines):
+def diff(master_lines, slave_lines, color=True):
+    """
+    Find differences between two set of lines.
+
+    :param master_lines: First set of lines
+    :type master_lines: list
+    :param slave_lines: Second set of lines
+    :type slave_lines: list
+    :param color: If True return colored diff
+    :type color: bool
+    :return: Difference between two set of lines
+    :rtype: str
+    """
     result = ""
-    for line in unified_diff(sorted(master_lines), sorted(slave_lines)):
+    for line in unified_diff(master_lines, slave_lines):
         if not line.startswith('---') and not line.startswith('+++'):
             if not line.endswith('\n'):
                 # print(result)
                 line += '\n'
-            pass
+
             if line.startswith('+'):
-                result += _green(line)
+
+                if color:
+                    result += _green(line)
+                else:
+                    result += line
+
             elif line.startswith('-'):
-                result += _red(line)
+
+                if color:
+                    result += _red(line)
+                else:
+                    result += line
             else:
                 result += line
 
@@ -156,6 +164,19 @@ def diff(master_lines, slave_lines):
 
 
 def get_fileds(conn, db, tbl):
+    """
+    Construct fields list string for a SELECT.
+    If a field is a binary type (BLOB, VARBINARY) then HEX() it.
+
+    :param conn: MySQL connection.
+    :type conn: Connection
+    :param db: Database name.
+    :type db: str
+    :param tbl: Table name.
+    :type tbl: str
+    :return: A comma separated list of fields.
+    :rtype: str
+    """
     query = "SELECT COLUMN_NAME, DATA_TYPE " \
             "FROM information_schema.COLUMNS " \
             "WHERE TABLE_SCHEMA='{db}' AND TABLE_NAME='{tbl}' " \
@@ -175,13 +196,21 @@ def get_fileds(conn, db, tbl):
     return ', '.join(fields)
 
 
-def build_chunk_query(db, tbl, chunk, conn, ch_db='percona',
+# pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+def build_chunk_query(db,
+                      tbl,
+                      chunk,
+                      conn,
+                      ch_db='percona',
                       ch_tbl='checksusm'):
+    """For a given database, table and chunk number construct
+    a SELECT query that would return records in this chunk.
+    """
 
-    log.info("# %s.%s, chunk %d" % (db, tbl, chunk))
+    LOG.info("# %s.%s, chunk %d", db, tbl, chunk)
     chunk_index = get_chunk_index(conn, db, tbl, chunk,
                                   ch_db=ch_db, ch_tbl=ch_tbl)
-    log.info("# chunk index: %s" % chunk_index)
+    LOG.info("# chunk index: %s", chunk_index)
     where = "WHERE"
     if chunk_index:
         index_fields = get_index_fields(conn,
@@ -199,27 +228,27 @@ def build_chunk_query(db, tbl, chunk, conn, ch_db='percona',
         clause_fields = []
         v_num = 0
         where += " (0 "
-        op = ">"
+        oper = ">"
         for index_field in index_fields:
             clause_fields.append(index_field)
             where += " OR ( 1"
             for clause_field in clause_fields:
                 if clause_field == clause_fields[len(clause_fields) - 1]:
                     if clause_field == index_field_last:
-                        op = ">="
+                        oper = ">="
                     else:
-                        op = ">"
-                v = lower_boundaries[v_num]
+                        oper = ">"
+                value = lower_boundaries[v_num]
                 v_num += 1
-                if is_printable(v):
+                if is_printable(value):
                     where += (" AND `%s` %s '%s'"
-                              % (clause_field, op, v))
+                              % (clause_field, oper, value))
                 else:
-                    v = ("UNHEX('%s')"
-                         % binascii.hexlify(str(v)))
+                    value = ("UNHEX('%s')"
+                             % binascii.hexlify(str(value)))
                     where += (" AND `%s` %s %s"
-                              % (clause_field, op, v))
-                op = "="
+                              % (clause_field, oper, value))
+                oper = "="
             where += " )"
         where += " )"
 
@@ -227,41 +256,56 @@ def build_chunk_query(db, tbl, chunk, conn, ch_db='percona',
         clause_fields = []
         v_num = 0
         where += " AND ( 0"
-        op = "<"
+        oper = "<"
         for index_field in index_fields:
             clause_fields.append(index_field)
             where += " OR ( 1"
             for clause_field in clause_fields:
                 if clause_field == clause_fields[len(clause_fields) - 1]:
                     if clause_field == index_field_last:
-                        op = "<="
+                        oper = "<="
                     else:
-                        op = "<"
-                v = upper_boundaries[v_num]
+                        oper = "<"
+                value = upper_boundaries[v_num]
                 v_num += 1
-                if is_printable(v):
+                if is_printable(value):
                     where += (" AND `%s` %s '%s'"
-                              % (clause_field, op, v))
+                              % (clause_field, oper, value))
                 else:
-                    v = ("UNHEX('%s')"
-                         % binascii.hexlify(str(v)))
+                    value = ("UNHEX('%s')"
+                             % binascii.hexlify(str(value)))
                     where += (" AND `%s` %s %s"
-                              % (clause_field, op, v))
-                op = "="
+                              % (clause_field, oper, value))
+                oper = "="
             where += " )"
         where += " )"
     else:
         where += " 1"
 
     fields = get_fileds(conn, db, tbl)
-    query = "SELECT %s FROM `%s`.`%s` %s" % (fields, db, tbl, where)
+    query = "SELECT %s FROM `%s`.`%s` USING (PRIMARY) %s" \
+            % (fields, db, tbl, where)
 
     return query
 
 
-def print_horizontal(cur_master, cur_slave, query):
+def print_horizontal(cur_master, cur_slave, query, color=True):
+    """
+    Find and return differences in horizontal format i.e. one line
+    - one record
 
-    log.info("Executing: %s" % query)
+    :param cur_master: MySQLdb cursor on master
+    :type cur_master: Cursor
+    :param cur_slave: MySQLdb cursor on slave
+    :type cur_slave: Cursor
+    :param query: Query to find records in a chunk we compare
+    :type query: str
+    :param color: If True - produce colorful output
+    :return: Differences in a chunk between master and slave
+    :rtype: str
+    """
+
+    LOG.info("Executing: %s", query)
 
     master_f, master_filename = tempfile.mkstemp(prefix="master.")
     slave_f, slave_filename = tempfile.mkstemp(prefix="slave.")
@@ -283,7 +327,7 @@ def print_horizontal(cur_master, cur_slave, query):
         os.write(master_f, "\n")
     os.close(master_f)
 
-    log.info("Executing: %s" % query)
+    LOG.info("Executing: %s", query)
     cur_slave.execute(query)
     result = cur_slave.fetchall()
     for row in result:
@@ -298,90 +342,123 @@ def print_horizontal(cur_master, cur_slave, query):
     os.close(slave_f)
 
     diffs = diff(open(master_filename).readlines(),
-                 open(slave_filename).readlines())
+                 open(slave_filename).readlines(),
+                 color=color)
     os.remove(master_filename)
     os.remove(slave_filename)
     return diffs
 
 
-def print_vertical(master, slave, user, passwd, query):
-    log.info("Executing: %s" % query)
+def print_vertical(master, slave, user, passwd, query, color=True):
+    r"""
+    Find and return differences in vertical format.
+    The vertical format is when you end MySQL query with '\G'
+
+    :param master: Hostname of the master.
+    :type master: str
+    :param slave: Hostname of the slave.
+    :type slave: str
+    :param query: Query to find records in a chunk we compare
+    :type query: str
+    :param color: If True - produce colorful output
+    :return: Differences in a chunk between master and slave
+    :rtype: str
+    """
+    LOG.info("Executing: %s", query)
 
     proc = Popen(['mysql', '-h', master, '-u', user, '-p%s' % passwd,
-                  '-e', '%s\G' % query],
+                  '-e', r'%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     master_cout, master_cerr = proc.communicate()
     if proc.returncode:
-        log.error('Failed to query master.')
-        log.error(master_cerr)
+        LOG.error('Failed to query master.')
+        LOG.error(master_cerr)
         exit(1)
 
-    log.info("Executing: %s" % query)
+    LOG.info("Executing: %s", query)
     proc = Popen(['mysql', '-h', slave, '-u', user, '-p%s' % passwd,
-                  '-e', '%s\G' % query],
+                  '-e', r'%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     slave_cout, slave_cerr = proc.communicate()
     if proc.returncode:
-        log.error('Failed to query slave.')
-        log.error(slave_cerr)
+        LOG.error('Failed to query slave.')
+        LOG.error(slave_cerr)
         exit(1)
 
-    return diff(master_cout.split('\n'), slave_cout.split('\n'))
+    return diff(master_cout.split('\n'), slave_cout.split('\n'), color=color)
 
 
 def get_inconsistencies(db, tbl, slave, user, passwd,
-                        ch_db='percona', ch_tbl='checksums', vertical=False):
-    try:
-        conn_slave = MySQLdb.connect(host=slave, user=user, passwd=passwd)
-        master = get_master(conn_slave)
-        conn_master = MySQLdb.connect(host=master, user=user, passwd=passwd)
+                        ch_db='percona', ch_tbl='checksums',
+                        vertical=False, color=True):
+    r"""
+    Print differences between slave and its master.
 
-        # Get chunks that are different on the slave and its master
-        query = ("SELECT chunk "
-                 "FROM `%s`.`%s` "
-                 "WHERE (this_crc<>master_crc OR this_cnt<>master_cnt) "
-                 "AND db='%s' AND tbl='%s'")
-        log.info("Executing: %s" % (query % (ch_db, ch_tbl, db, tbl)))
-        cur_master = conn_master.cursor()
-        cur_slave = conn_slave.cursor()
+    :param db: Database name of the inconsistent table.
+    :param tbl: Table name of the inconsistent table.
+    :param slave: Hostname of the slave.
+    :param user: User to connect to MySQL.
+    :param passwd: Password to connect to MySQL.
+    :param ch_db: Database where checksums are stored.
+    :param ch_tbl: Table name where checksums are stored.
+    :param vertical: If True - print result vertically (\G in MySQL)
+    :param color: If True - print colorful output
+    """
+    conn_slave = MySQLdb.connect(host=slave, user=user, passwd=passwd)
+    master = get_master(conn_slave)
+    conn_master = MySQLdb.connect(host=master, user=user, passwd=passwd)
 
-        cur_slave.execute(query % (ch_db, ch_tbl, db, tbl))
-        chunks = cur_slave.fetchall()
+    # Get chunks that are different on the slave and its master
+    query = ("SELECT chunk "
+             "FROM `%s`.`%s` "
+             "WHERE (this_crc<>master_crc OR this_cnt<>master_cnt) "
+             "AND db='%s' AND tbl='%s'")
+    LOG.info("Executing: %s", query % (ch_db, ch_tbl, db, tbl))
+    cur_master = conn_master.cursor()
+    cur_slave = conn_slave.cursor()
 
-        if len(chunks) == 1:
-            chunks_str = "chunk"
+    cur_slave.execute(query % (ch_db, ch_tbl, db, tbl))
+    chunks = cur_slave.fetchall()
+
+    if len(chunks) == 1:
+        chunks_str = "chunk"
+    else:
+        chunks_str = "chunks"
+    LOG.info("Found %d inconsistent %s", len(chunks), chunks_str)
+    # generate WHERE clause to fetch records of the chunk
+    for chunk, in chunks:
+
+        query = build_chunk_query(db, tbl, chunk, conn_slave, ch_db=ch_db,
+                                  ch_tbl=ch_tbl)
+
+        if vertical:
+            diffs = print_vertical(master, slave, user, passwd, query,
+                                   color=color)
         else:
-            chunks_str = "chunks"
-        log.info("Found %d inconsistent %s" % (len(chunks), chunks_str))
-        # generate WHERE clause to fetch records of the chunk
-        for chunk, in chunks:
+            diffs = print_horizontal(cur_master, cur_slave, query, color=color)
+            LOG.info("Differences between slave %s and its master:", slave)
 
-            query = build_chunk_query(db, tbl, chunk, conn_slave, ch_db=ch_db,
-                                      ch_tbl=ch_tbl)
-
-            if vertical:
-                diffs = print_vertical(master, slave, user, passwd, query)
-            else:
-                diffs = print_horizontal(cur_master, cur_slave, query)
-                log.info("Differences between slave %s and its master:"
-                         % slave)
-
-            print(diffs)
-
-    except MySQLdb.Error as err:
-        log.error(err)
+        print(diffs)
 
 
 def get_inconsistent_tables(host, user, password,
                             ch_db='percona',
                             ch_tbl='checksums'):
-    try:
-        conn = MySQLdb.connect(host=host, user=user, passwd=password)
-        cur = conn.cursor()
-        cur.execute("SELECT db, tbl FROM `%s`.`%s` "
-                    "WHERE this_crc <> master_crc OR this_cnt <> master_cnt"
-                    % (ch_db, ch_tbl))
-        return cur.fetchall()
-    except MySQLdb.Error as err:
-        log.error(err)
-        return []
+    """
+    On a given MySQL server find tables that are inconsistent with the master.
+
+    :param host: Hostname with potentially inconsistent tables.
+    :param user: MySQL user.
+    :param password: MySQL password.
+    :param ch_db: Database where checksums are stored.
+    :param ch_tbl: Table name where checksums are stored.
+    :return: List of tuples with inconsistent tables.
+    Each tuple is database name, table name
+    :rtype: list
+    """
+    conn = MySQLdb.connect(host=host, user=user, passwd=password)
+    cur = conn.cursor()
+    cur.execute("SELECT db, tbl FROM `%s`.`%s` "
+                "WHERE this_crc <> master_crc OR this_cnt <> master_cnt"
+                % (ch_db, ch_tbl))
+    return cur.fetchall()
