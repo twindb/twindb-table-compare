@@ -196,6 +196,34 @@ def get_fileds(conn, db, tbl):
     return ', '.join(fields)
 
 
+def primary_exists(conn, db, tbl):
+    """
+    Check if PRIMARY index exists in table db.tbl
+
+    :param conn: MySQLdb connection.
+    :type conn: Connection
+    :param db: Database name.
+    :type db: str
+    :param tbl: Table name.
+    :type tbl: str
+    :return: True if index PRIMARY exists in table db.tbl
+    :rtype: bool
+    """
+    query = "SELECT COUNT(*)" \
+            "FROM INFORMATION_SCHEMA.STATISTICS " \
+            "WHERE TABLE_SCHEMA = %s " \
+            "AND TABLE_NAME = %s" \
+            "AND INDEX_NAME = 'PRIMARY'"
+    cursor = conn.cursor()
+    cursor.execute(query, (db, tbl))
+
+    n_fields = cursor.fetchone()[0]
+
+    LOG.debug('Number of fields in PRIMARY index %d', n_fields)
+
+    return bool(n_fields > 0)
+
+
 # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 def build_chunk_query(db,
                       tbl,
@@ -283,8 +311,13 @@ def build_chunk_query(db,
         where += " 1"
 
     fields = get_fileds(conn, db, tbl)
-    query = "SELECT %s FROM `%s`.`%s` USING (PRIMARY) %s" \
-            % (fields, db, tbl, where)
+    if primary_exists(conn, db, tbl):
+        index_hint = "USE INDEX (PRIMARY)"
+    else:
+        index_hint = ""
+
+    query = "SELECT %s FROM `%s`.`%s` %s %s" \
+            % (fields, db, tbl, index_hint, where)
 
     return query
 
