@@ -15,7 +15,7 @@ import pytest
 from click.testing import CliRunner
 
 from twindb_table_compare import cli, __version__
-from twindb_table_compare.compare import is_printable, diff
+from twindb_table_compare.compare import is_printable, diff, print_vertical
 
 
 def test_command_line_interface():
@@ -639,3 +639,32 @@ def test_diff(master_lines, slave_lines, difference):
 
     actual_diff = diff(master_lines, slave_lines)
     assert actual_diff == difference
+
+
+@mock.patch('twindb_table_compare.compare.Popen')
+def test_print_vertical(mock_popen, out_master, out_slave):
+    mock_proc = mock.Mock()
+    mock_proc.communicate.side_effect = [out_master, out_slave]
+    mock_proc.returncode = 0
+
+    mock_popen.return_value = mock_proc
+    assert print_vertical('foo1', 'foo2', 'foo3', 'foo4', 'foo5',
+                          color=False) == """@@ -43,7 +43,7 @@
+  authentication_string:
+       password_expired: N
+ **************************************************************
+-                  Host: master.box
++                  Host: slave.box
+                   User: root
+               Password:
+            Select_priv: Y
+@@ -219,7 +219,7 @@
+  authentication_string: NULL
+       password_expired: N
+ **************************************************************
+-                  Host: master.box
++                  Host: slave.box
+                   User:
+               Password:
+            Select_priv: N
+"""
