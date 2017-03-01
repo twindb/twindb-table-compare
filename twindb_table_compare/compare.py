@@ -403,6 +403,14 @@ def print_vertical(master, slave, user, passwd, query, color=True):
                   '-e', r'%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     master_cout, master_cerr = proc.communicate()
+    master_lines = []
+    for line in master_cout.split('\n'):
+        if line.startswith('***************************'):
+            master_lines.append('*******************************'
+                                '*******************************')
+        else:
+            master_lines.append(line)
+
     if proc.returncode:
         LOG.error('Failed to query master.')
         LOG.error(master_cerr)
@@ -413,12 +421,21 @@ def print_vertical(master, slave, user, passwd, query, color=True):
                   '-e', r'%s\G' % query],
                  stdout=PIPE, stderr=PIPE)
     slave_cout, slave_cerr = proc.communicate()
+
+    slave_lines = []
+    for line in slave_cout.split('\n'):
+        if line.startswith('***************************'):
+            slave_lines.append('*******************************'
+                               '*******************************')
+        else:
+            slave_lines.append(line)
+
     if proc.returncode:
         LOG.error('Failed to query slave.')
         LOG.error(slave_cerr)
         exit(1)
 
-    return diff(master_cout.split('\n'), slave_cout.split('\n'), color=color)
+    return diff(master_lines, slave_lines, color=color)
 
 
 def get_inconsistencies(db, tbl, slave, user, passwd,
