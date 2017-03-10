@@ -187,8 +187,13 @@ def get_fileds(conn, db, tbl):
     fields = []
     for row in cursor.fetchall():
         col_name = row[0]
-        col_type = row[1]
-        if col_type in ['blob', 'binary']:
+        col_type = row[1].lower()
+        if col_type in ['tinyblob',
+                        'mediumblob',
+                        'blob',
+                        'longblob',
+                        'binary',
+                        'varbinary']:
             col_name = 'HEX(%s)' % col_name
 
         fields.append(col_name)

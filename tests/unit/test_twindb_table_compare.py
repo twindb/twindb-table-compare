@@ -15,7 +15,8 @@ import pytest
 from click.testing import CliRunner
 
 from twindb_table_compare import cli, __version__
-from twindb_table_compare.compare import is_printable, diff, print_vertical
+from twindb_table_compare.compare import is_printable, diff, print_vertical, \
+    get_fileds
 
 
 def test_command_line_interface():
@@ -668,3 +669,58 @@ def test_print_vertical(mock_popen, out_master, out_slave):
                Password:
             Select_priv: N
 """
+
+
+@pytest.mark.parametrize('fields, result', [
+    (
+        (
+            ('Host', 'char'),
+            ('User', 'char'),
+            ('Proxied_host', 'char'),
+            ('Proxied_user', 'char'),
+            ('With_grant', 'tinyint'),
+            ('Grantor', 'char'),
+            ('Timestamp', 'timestamp')
+        ),
+        'Host, User, Proxied_host, Proxied_user, With_grant, Grantor, Timestamp'
+    ),
+    (
+        (
+            ('f1', 'char'),
+            ('f2', 'blob')
+        ),
+        'f1, HEX(f2)'
+    ),
+    (
+        (
+            ('f1', 'char'),
+            ('f2', 'BLOB')
+        ),
+        'f1, HEX(f2)'
+    ),
+    (
+        (
+            ('f1', 'char'),
+            ('f2', 'mediumblob')
+        ),
+        'f1, HEX(f2)'
+    ),
+    (
+        (
+            ('f1', 'char'),
+            ('f2', 'BINARY'),
+            ('f2', 'VARBINARY'),
+            ('f2', 'TINYBLOB'),
+            ('f2', 'BLOB'),
+            ('f2', 'MEDIUMBLOB'),
+            ('f2', 'LONGBLOB'),
+        ),
+        'f1, HEX(f2), HEX(f2), HEX(f2), HEX(f2), HEX(f2), HEX(f2)'
+    )
+])
+def test_get_fileds(fields, result):
+    mock_conn = mock.Mock()
+    mock_cursor = mock.Mock()
+    mock_cursor.fetchall.return_value = fields
+    mock_conn.cursor.return_value = mock_cursor
+    assert get_fileds(mock_conn, 'foo', 'bar') == result
