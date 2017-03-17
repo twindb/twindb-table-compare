@@ -1,5 +1,9 @@
 import pytest
 
+from twindb_table_compare import setup_logging, LOG
+
+setup_logging(LOG, debug=True)
+
 
 @pytest.fixture
 def out_master():

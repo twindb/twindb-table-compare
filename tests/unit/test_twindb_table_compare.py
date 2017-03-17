@@ -16,7 +16,7 @@ from click.testing import CliRunner
 
 from twindb_table_compare import cli, __version__
 from twindb_table_compare.compare import is_printable, diff, print_vertical, \
-    get_fileds
+    get_fields, build_chunk_query, get_where
 
 
 def test_command_line_interface():
@@ -718,9 +718,55 @@ def test_print_vertical(mock_popen, out_master, out_slave):
         'f1, HEX(f2), HEX(f2), HEX(f2), HEX(f2), HEX(f2), HEX(f2)'
     )
 ])
-def test_get_fileds(fields, result):
+def test_get_fields(fields, result):
     mock_conn = mock.Mock()
     mock_cursor = mock.Mock()
     mock_cursor.fetchall.return_value = fields
     mock_conn.cursor.return_value = mock_cursor
-    assert get_fileds(mock_conn, 'foo', 'bar') == result
+    assert get_fields(mock_conn, 'foo', 'bar') == result
+
+
+@mock.patch('twindb_table_compare.compare.primary_exists')
+@mock.patch('twindb_table_compare.compare.get_fields')
+@mock.patch('twindb_table_compare.compare.get_boundary')
+@mock.patch('twindb_table_compare.compare.get_index_fields')
+@mock.patch('twindb_table_compare.compare.get_chunk_index')
+def test_build_chunk_query(mock_get_chunk_index,
+                           mock_get_index_fields,
+                           mock_get_boundary,
+                           mock_get_fields,
+                           mock_primary_exists):
+
+    mock_get_chunk_index.return_value = 'PRIMARY'
+    mock_get_index_fields.return_value = ['id']
+    mock_get_boundary.return_value = ('1', '186139')
+    mock_get_fields.return_value = 'id, name'
+    mock_primary_exists.return_value = True
+
+    mock_connection = mock.Mock()
+
+    assert build_chunk_query('test', 't1', 1, mock_connection) == \
+           "SELECT id, name FROM `test`.`t1` USE INDEX (PRIMARY) " \
+           "WHERE ( 0 OR ( 1 AND `id` >= '1' ) ) " \
+           "AND ( 0 OR ( 1 AND `id` <= '186139' ) )"
+
+
+@pytest.mark.parametrize('lower_boundary, upper_boundary, result', [
+    (
+        '1',
+        '186139',
+        "WHERE ( 0 OR ( 1 AND `id` >= '1' ) ) AND ( 0 OR ( 1 AND `id` <= '186139' ) )"
+    ),
+    (
+        None,
+        '186139',
+        "WHERE 1 AND ( 0 OR ( 1 AND `id` <= '186139' ) )"
+    ),
+    (
+        '1',
+        None,
+        "WHERE ( 0 OR ( 1 AND `id` >= '1' ) ) AND 1"
+    )
+])
+def test_get_where(lower_boundary, upper_boundary, result):
+    assert get_where(lower_boundary, upper_boundary, ['id']) == result
