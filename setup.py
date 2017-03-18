@@ -18,7 +18,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='twindb_table_compare',
-    version='1.1.4',
+    version='1.1.5',
     description="TwinDB Table Compare reads percona.checksums from the master "
                 "and slave and shows what records are difference "
                 "if there are any inconsistencies.",
@@ -42,17 +42,16 @@ setup(
     zip_safe=False,
     keywords='twindb_table_compare',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Topic :: Database',
+        'Topic :: Database :: Database Engines/Servers',
     ],
     test_suite='tests',
     tests_require=test_requirements
