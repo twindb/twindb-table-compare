@@ -12,7 +12,8 @@ import MySQLdb
 import pytest
 
 from twindb_table_compare.compare import is_printable, \
-    get_chunk_index, get_index_fields, get_boundary, get_master
+    get_chunk_index, get_index_fields, get_boundary, get_master, \
+    build_chunk_query
 
 
 @pytest.fixture
@@ -69,3 +70,7 @@ def test_get_boundary(master_connection):
 
 def test_get_master(slave_connection):
     assert get_master(slave_connection) == '192.168.35.250'
+
+
+# def test_build_chunk_query(slave_connection):
+#    assert build_chunk_query('test', 't1', 1, slave_connection) == ""

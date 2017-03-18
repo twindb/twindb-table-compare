@@ -163,7 +163,7 @@ def diff(master_lines, slave_lines, color=True):
     return result
 
 
-def get_fileds(conn, db, tbl):
+def get_fields(conn, db, tbl):
     """
     Construct fields list string for a SELECT.
     If a field is a binary type (BLOB, VARBINARY) then HEX() it.
@@ -229,13 +229,94 @@ def primary_exists(conn, db, tbl):
     return bool(n_fields > 0)
 
 
+def get_boundary_clause(oper='>',
+                        index_fields=None,
+                        boundaries=None):
+    """
+    Generate a clause for the WHERE statement based on field names and values
+
+    :param oper: Can be either ``<`` for the lower boundary or ``>``
+    for the upper boundary
+    :param index_fields: list of fields in the index
+    :type index_fields: list
+    :param boundaries: list of values for a boundary.
+    :type boundaries: list
+    :return: a clause that defines a boundary (upper or lower) of a chunk.
+    """
+    # generate boundary clause
+    index_field_last = index_fields[len(index_fields) - 1]
+    LOG.debug('index last field: %s', index_field_last)
+
+    clause_fields = []
+    v_num = 0
+    where = "( 0"
+    oper_current = oper
+    for index_field in index_fields:
+        clause_fields.append(index_field)
+        where += " OR ( 1"
+        for clause_field in clause_fields:
+            if clause_field == clause_fields[len(clause_fields) - 1]:
+                if clause_field == index_field_last:
+                    oper_current = oper + "="
+                else:
+                    oper_current = oper
+            value = boundaries[v_num]
+            v_num += 1
+            if is_printable(value):
+                where += (" AND `%s` %s '%s'"
+                          % (clause_field, oper_current, value))
+            else:
+                value = ("UNHEX('%s')"
+                         % binascii.hexlify(str(value)))
+                where += (" AND `%s` %s %s"
+                          % (clause_field, oper_current, value))
+            oper = "="
+        where += " )"
+    where += " )"
+    return where
+
+
+def get_where(lower_boundary, upper_boundary, index_fields):
+    """
+    Generate WHERE clause based on strings ``lower_boundary``,
+    ``upper_boundary`` from percona.checksums table and fields in the index
+
+    :param lower_boundary: values of lower boundary
+    :type lower_boundary: str
+    :param upper_boundary: values of upper boundary
+    :type upper_boundary: str
+    :param index_fields: list of fields in the index that was used
+    to access a chunk
+    :return: a WHERE clause to read a chunk
+    :rtype: str
+    """
+
+    try:
+        lower_boundaries = lower_boundary.split(",")
+
+        lower_clause = get_boundary_clause(oper='>',
+                                           index_fields=index_fields,
+                                           boundaries=lower_boundaries)
+    except AttributeError:
+        lower_clause = '1'
+
+    try:
+        upper_boundaries = upper_boundary.split(",")
+        upper_clause = get_boundary_clause(oper='<',
+                                           index_fields=index_fields,
+                                           boundaries=upper_boundaries)
+
+    except AttributeError:
+        upper_clause = '1'
+
+    result = 'WHERE {lower} AND {upper}'.format(lower=lower_clause,
+                                                upper=upper_clause)
+    return result
+
+
 # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-def build_chunk_query(db,
-                      tbl,
-                      chunk,
-                      conn,
-                      ch_db='percona',
-                      ch_tbl='checksusm'):
+def build_chunk_query(db, tbl, chunk, conn,
+                      ch_db='percona', ch_tbl='checksums'):
     """For a given database, table and chunk number construct
     a SELECT query that would return records in this chunk.
     """
@@ -244,78 +325,20 @@ def build_chunk_query(db,
     chunk_index = get_chunk_index(conn, db, tbl, chunk,
                                   ch_db=ch_db, ch_tbl=ch_tbl)
     LOG.info("# chunk index: %s", chunk_index)
-    where = "WHERE"
+
     if chunk_index:
-        index_fields = get_index_fields(conn,
-                                        db,
-                                        tbl,
-                                        chunk_index)
-        index_field_last = index_fields[len(index_fields) - 1]
+        index_fields = get_index_fields(conn, db, tbl, chunk_index)
+
         lower_boundary, upper_boundary = get_boundary(conn,
                                                       db, tbl, chunk,
                                                       ch_db=ch_db,
                                                       ch_tbl=ch_tbl)
-        lower_boundaries = lower_boundary.split(",")
-        upper_boundaries = upper_boundary.split(",")
-        # generate lower boundary clause
-        clause_fields = []
-        v_num = 0
-        where += " (0 "
-        oper = ">"
-        for index_field in index_fields:
-            clause_fields.append(index_field)
-            where += " OR ( 1"
-            for clause_field in clause_fields:
-                if clause_field == clause_fields[len(clause_fields) - 1]:
-                    if clause_field == index_field_last:
-                        oper = ">="
-                    else:
-                        oper = ">"
-                value = lower_boundaries[v_num]
-                v_num += 1
-                if is_printable(value):
-                    where += (" AND `%s` %s '%s'"
-                              % (clause_field, oper, value))
-                else:
-                    value = ("UNHEX('%s')"
-                             % binascii.hexlify(str(value)))
-                    where += (" AND `%s` %s %s"
-                              % (clause_field, oper, value))
-                oper = "="
-            where += " )"
-        where += " )"
 
-        # generate upper boundary clause
-        clause_fields = []
-        v_num = 0
-        where += " AND ( 0"
-        oper = "<"
-        for index_field in index_fields:
-            clause_fields.append(index_field)
-            where += " OR ( 1"
-            for clause_field in clause_fields:
-                if clause_field == clause_fields[len(clause_fields) - 1]:
-                    if clause_field == index_field_last:
-                        oper = "<="
-                    else:
-                        oper = "<"
-                value = upper_boundaries[v_num]
-                v_num += 1
-                if is_printable(value):
-                    where += (" AND `%s` %s '%s'"
-                              % (clause_field, oper, value))
-                else:
-                    value = ("UNHEX('%s')"
-                             % binascii.hexlify(str(value)))
-                    where += (" AND `%s` %s %s"
-                              % (clause_field, oper, value))
-                oper = "="
-            where += " )"
-        where += " )"
+        where = get_where(lower_boundary, upper_boundary, index_fields)
     else:
-        where += " 1"
+        where = "WHERE 1"
 
-    fields = get_fileds(conn, db, tbl)
+    fields = get_fields(conn, db, tbl)
     if primary_exists(conn, db, tbl):
         index_hint = "USE INDEX (PRIMARY)"
     else:
