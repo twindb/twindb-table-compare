@@ -68,7 +68,7 @@ Ready to contribute? Here's how to set up `twindb_table_compare` for local devel
 
     $ mkvirtualenv twindb_table_compare
     $ cd twindb_table_compare/
-    $ python setup.py develop
+    $ make bootstrap
 
 4. Create a branch for local development::
 
@@ -76,11 +76,11 @@ Ready to contribute? Here's how to set up `twindb_table_compare` for local devel
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass lenter and
+the tests, including testing other Python versions with ``tox``::
 
-    $ flake8 twindb_table_compare tests
-    $ python setup.py test or py.test
-    $ tox
+    $ make lint
+    $ make test-all
 
    To get flake8 and tox, just pip install them into your virtualenv.
 
@@ -110,5 +110,6 @@ Tips
 
 To run a subset of tests::
 
-$ py.test tests.test_twindb_table_compare
+    $ py.test tests/unit/test_twindb_table_compare.py
+    $ py.test tests/unit/test_twindb_table_compare.py::test_build_chunk_query
 

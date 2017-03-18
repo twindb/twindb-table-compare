@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to TwinDB Table Compare's documentation!
-======================================
+================================================
 
 Contents:
 
@@ -14,8 +14,10 @@ Contents:
    readme
    installation
    usage
+   modules
    contributing
-   authorshistory
+   authors
+
 
 Indices and tables
 ==================
