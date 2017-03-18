@@ -1,3 +1,4 @@
+#@IgnoreInspection BashAddShebang
 bumpversion
 flake8
 tox
