@@ -1,4 +1,0 @@
-#@IgnoreInspection BashAddShebang
-Click>=6.0
-mysql
-logutils
