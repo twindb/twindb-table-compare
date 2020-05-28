@@ -1,58 +1,52 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from pip.req import parse_requirements
 from setuptools import setup
 
-with open('README.rst') as readme_file:
+with open("README.rst") as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 
-requirements = [str(ir.req) for ir in
-                parse_requirements('requirements.txt', session=False)]
+with open("requirements.txt") as f:
+    requirements = f.read().strip().split("\n")
 
-test_requirements = [str(ir.req) for ir in
-                     parse_requirements('requirements_dev.txt', session=False)]
+with open("requirements_dev.txt") as f:
+    test_requirements = f.read().strip().split("\n")
 
 setup(
-    name='twindb_table_compare',
-    version='1.1.5',
-    description="TwinDB Table Compare reads percona.checksums from the master "
-                "and slave and shows what records are difference "
-                "if there are any inconsistencies.",
-    long_description=readme + '\n\n' + history,
+    name="twindb_table_compare",
+    version="1.1.5",
+    description=(
+        "TwinDB Table Compare reads percona.checksums from the master and slave "
+        "and shows what records are difference if there are any inconsistencies."
+    ),
+    long_description=readme + "\n\n" + history,
     author="Aleksandr Kuzminsky",
-    author_email='aleks@twindb.com',
-    url='https://github.com/twindb/twindb_table_compare',
-    packages=[
-        'twindb_table_compare',
-    ],
-    package_dir={'twindb_table_compare':
-                 'twindb_table_compare'},
+    author_email="aleks@twindb.com",
+    url="https://github.com/twindb/twindb-table-compare",
+    packages=["twindb_table_compare"],
+    package_dir={"twindb_table_compare": "twindb_table_compare"},
     entry_points={
-        'console_scripts': [
-            'twindb_table_compare=twindb_table_compare.cli:main'
-        ]
+        "console_scripts": ["twindb_table_compare=twindb_table_compare.cli:main"]
     },
     include_package_data=True,
     install_requires=requirements,
     license="Apache Software License 2.0",
     zip_safe=False,
-    keywords='twindb_table_compare',
+    keywords="twindb_table_compare",
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Topic :: Database',
-        'Topic :: Database :: Database Engines/Servers',
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Database",
+        "Topic :: Database :: Database Engines/Servers",
     ],
-    test_suite='tests',
-    tests_require=test_requirements
+    test_suite="tests",
+    tests_require=test_requirements,
 )

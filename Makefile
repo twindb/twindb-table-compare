@@ -58,27 +58,15 @@ vagrant-provision:
 
 .PHONY: bootstrap
 bootstrap: ## bootstrap the development environment
-	pip install -U "setuptools==32.3.1"
-	pip install -U "pip==9.0.1"
-	pip install -U "pip-tools>=1.6.0"
-	pip-sync requirements.txt requirements_dev.txt
+	pip install -U "setuptools ~= 47.0"
+	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 
-.PHONY: rebuild-requirements
-rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
-	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
-	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
-
-.PHONY: upgrade-requirements
-upgrade-requirements: ## Upgrade requirements
-	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
-	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
-
 test:  ## run tests quickly with the default Python
-	py.test -vx tests/unit/
+	pytest -vx tests/unit/
 
 test-functional:  ## run functional tests
-	py.test -vx tests/functional/
+	pytest -vx tests/functional/
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -90,9 +78,6 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 coverage:
 	py.test --cov=twindb_table_compare --cov-report term-missing tests/unit
