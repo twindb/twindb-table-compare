@@ -1,6 +1,5 @@
 deploy:
   true:
-    condition: $TOXENV == py37
     repo: twindb/twindb_table_compare
     tags: true
   distributions: sdist bdist_wheel
@@ -8,16 +7,14 @@ deploy:
     secure: iSEjBKU+FLGl9QkmiJLlLE9YREPSd446aL6at8gN5EyQC38uIQ/8Nc/pyioEz/rduVtQbXLZqqjI4mET/avoLKLXBwpdSmkXm+sBqBNTyeR4Wc4sJ/tbzI7M+Q2MoXkg9N5ryXVV7D+zsbnBlN/076oNy2BRNuNZVouEHpiqrwMae4EfxUR7V/Iqxk7x6LIEAyYh9IJHVUa79NTx5DQqFqee1Tu1pcIasJRGcO44aOoelO9Ytp8oJJHOvLXxvPaPWRHbw9Epg8/xowm0Hrm2yBQ1SCvVC9BrjQX9nGcXVgO/ySoQJCy/b/YMe/1G4lw9SWPFNJLaQojwUWuvbGslfIbBHMxetNuA2u7z4nmgSSwsvcqvLI7KpNu1IKjKdE6/v4Y6jUesw+SoxWOVeQcNP5Rhpg+tVBPPnS5/ymGycZqHFzxoj1NFBZcn/fghX251KLqqJdZNPqR+W6DQP+72U6ocKBRmoCARDRjqXMBj+LCP38nnGQo1xYwGCB518P5qE43/0J8HL8/uAVbyZnqlGf/8MBmttPIYVD6Pf3sBkD6b/Ld5QHOZsSk3mZOZDfr/2XFlB47VPXj8QTB5xR9Ksbn5PK/2hs89padMHosBT+7/VQ1+Uk94HRs7gPOn9Diku5LBXfuUYL/UJmOXGDUiaLkZ2amKq6AprP5Z+BKQ96o=
   provider: pypi
   user: twindb
-env:
-- TOXENV=lint
-- TOXENV=cov
-- TOXENV=py36
-- TOXENV=py37
-- TOXENV=py38
+  skip_existing: true
 install: pip install -U tox
 language: python
-python: 3.7
-script: tox -e ${TOXENV}
+python:
+    - 3.6
+    - 3.7
+    - 3.8
+script: make bootstrap lint test coverage
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

@@ -63,7 +63,7 @@ bootstrap: ## bootstrap the development environment
 	pip install --editable .
 
 test:  ## run tests quickly with the default Python
-	pytest -vx tests/unit/
+	pytest -vx --cov=twindb_table_compare --cov-report term-missing tests/unit/
 
 test-functional:  ## run functional tests
 	pytest -vx tests/functional/
@@ -80,7 +80,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(BROWSER) docs/_build/html/index.html
 
 coverage:
-	py.test --cov=twindb_table_compare --cov-report term-missing tests/unit
+	codecov
 
 dist: clean ## builds source and wheel package
 	python setup.py sdist
