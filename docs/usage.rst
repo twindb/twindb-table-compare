@@ -3,16 +3,29 @@ Usage
 
 TwinDB Table Compare should be used in the command line.
 
-This will show differences in data between *slave* and its master.
 
-``twindb_table_compare`` *slave*
+.. note::
+
+    Before running TwinDB Table Compare tool, you should run ``pt-table-checksum`` first.
+    ``twindb-table-compare`` uses ``percona.checksums``. If you don't run ``pt-table-checksum``,
+    ``percona.checksums`` will be empty and thus ``twindb-table-compare`` won't show any differences.
+
+.. note::
+
+    ``twindb-table-compare`` should run agains the slave.
+
+This will show differences in data between a *slave* and its master.
+
+.. code-block:: shell
+
+    twindb-table-compare slave
 
 
 where *slave* is a hostname of a MySQL slave.
 
 ::
 
-    [root@master vagrant]# twindb_table_compare --user=dba --password=qwerty 192.168.35.251
+    # twindb-table-compare --user=dba --password=qwerty 192.168.35.251
     2016-09-03 22:48:01,732: INFO: twindb_table_compare.get_inconsistencies():127: Executing: SELECT chunk FROM `percona`.`checksums` WHERE (this_crc&lt;&gt;master_crc OR this_cnt&lt;&gt;master_cnt) AND db='mysql' AND tbl='proxies_priv'
     2016-09-03 22:48:01,734: INFO: twindb_table_compare.get_inconsistencies():138: Found 1 inconsistent chunk
     2016-09-03 22:48:01,734: INFO: twindb_table_compare.get_inconsistencies():141: # mysql.proxies_priv, chunk 1
@@ -48,4 +61,4 @@ where *slave* is a hostname of a MySQL slave.
      localhost dba *AA1420F182E88B9E5F874F6FBE7459291E8F4601 Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y Y 0 0 0 0mysql_native_password N
      % repl *809534247D21AC735802078139D8A854F45C31F3 N N N N N N N N N N N N N N N N N N N Y N N N N N N N N N 0 0 0 0 mysql_native_password N
 
-Run ``twindb_table_compare --help`` for other options.
+Run ``twindb-table-compare --help`` for other options.
