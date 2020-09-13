@@ -21,6 +21,7 @@ setup(
         "and shows what records are difference if there are any inconsistencies."
     ),
     long_description=readme + "\n\n" + history,
+    long_description_content_type="text/x-rst",
     author="Aleksandr Kuzminsky",
     author_email="aleks@twindb.com",
     url="https://github.com/twindb/twindb-table-compare",

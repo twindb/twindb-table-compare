@@ -39,8 +39,6 @@ and shows what records are difference if there are any inconsistencies.
 * Blogpost with usage examples: https://twindb.com/pt-table-checksum-show-differences/
 
 
-.. include:: docs/README.rst
-
 
 Credits
 -------

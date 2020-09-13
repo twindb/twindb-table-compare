@@ -58,6 +58,7 @@ vagrant-provision:
 
 .PHONY: bootstrap
 bootstrap: ## bootstrap the development environment
+	pip install -U "pip ~= 20.2"
 	pip install -U "setuptools ~= 50.0"
 	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
