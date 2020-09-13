@@ -7,7 +7,7 @@ from logutils.colorize import ColorizingStreamHandler
 
 __author__ = "Aleksandr Kuzminsky"
 __email__ = "aleks@twindb.com"
-__version__ = "3.0.2"
+__version__ = "3.0.3"
 
 LOG = logging.getLogger(__name__)
 
