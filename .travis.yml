@@ -1,6 +1,6 @@
 deploy:
   true:
-    repo: twindb/twindb_table_compare
+    repo: twindb/twindb-table-compare
     tags: true
   distributions: sdist bdist_wheel
   password:
