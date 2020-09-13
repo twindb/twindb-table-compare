@@ -413,12 +413,12 @@ def print_horizontal(cur_master, cur_slave, query, color=True):
         for field in row:
             # print(field)
             if is_printable(str(field)):
-                os.write(master_f, str(field))
+                os.write(master_f, str(field).encode())
             else:
                 # pprint HEX-ed string
-                os.write(master_f, binascii.hexlify(str(field)))
-            os.write(master_f, "\t")
-        os.write(master_f, "\n")
+                os.write(master_f, binascii.hexlify(str(field).encode()))
+            os.write(master_f, "\t".encode())
+        os.write(master_f, "\n".encode())
     os.close(master_f)
 
     LOG.info("Executing: %s", query)
@@ -427,12 +427,12 @@ def print_horizontal(cur_master, cur_slave, query, color=True):
     for row in result:
         for field in row:
             if is_printable(str(field)):
-                os.write(slave_f, str(field))
+                os.write(slave_f, str(field).encode())
             else:
                 # pprint HEX-ed string
-                os.write(slave_f, binascii.hexlify(str(field)))
-            os.write(slave_f, "\t")
-        os.write(slave_f, "\n")
+                os.write(slave_f, binascii.hexlify(str(field).encode()))
+            os.write(slave_f, "\t".encode())
+        os.write(slave_f, "\n".encode())
     os.close(slave_f)
 
     diffs = diff(

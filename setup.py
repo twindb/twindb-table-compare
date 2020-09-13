@@ -27,7 +27,7 @@ setup(
     packages=["twindb_table_compare"],
     package_dir={"twindb_table_compare": "twindb_table_compare"},
     entry_points={
-        "console_scripts": ["twindb_table_compare=twindb_table_compare.cli:main"]
+        "console_scripts": ["twindb-table-compare=twindb_table_compare.cli:main"]
     },
     include_package_data=True,
     install_requires=requirements,
