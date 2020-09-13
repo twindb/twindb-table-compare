@@ -3,12 +3,12 @@
 nodes = [
     { :hostname   => 'master',
       :ip         => '192.168.35.250',
-      :box        => 'bento/centos-7.3',
+      :box        => 'ubuntu/focal64',
       :ram        => 3072
     },
     { :hostname   => 'slave',
       :ip         => '192.168.35.251',
-      :box        => 'bento/centos-7.3',
+      :box        => 'ubuntu/focal64',
       :ram        => 3072
     }
 ]
@@ -18,20 +18,9 @@ VAGRANTFILE_API_VERSION = '2'
 
 $script = <<SCRIPT
 
-if [[ $(cat /sys/class/net/enp0s8/operstate) != 'up' ]]; then
-    service network restart
-fi
+apt-get update
+apt-get -y install puppet
 
-
-function install_puppet(){
-    rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
-    for i in 1 2 3
-    do
-        yum -y install puppet && break
-    done
-}
-
-which puppet || install_puppet
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -54,12 +43,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
             end
         end
-        config.vm.synced_folder '..', '/twindb_table_compare'
+        config.vm.synced_folder '..', '/twindb-table-compare'
     end
 
     config.vm.provision 'shell', inline: $script
     config.vm.provision :puppet do |puppet|
         puppet.environment_path = 'environment'
         puppet.environment = 'puppet'
+        puppet.options = "--verbose --debug"
     end
 end

@@ -1,5 +1,7 @@
-class profile::base {
-  $user = 'vagrant'
+class profile::base (
+    $user = 'vagrant'
+) {
+
   user { $user:
     ensure => present
   }
@@ -10,9 +12,9 @@ class profile::base {
     mode   => "0750"
   }
 
-  file { "/home/${profile::base::user}/.bashrc":
+  file { "/home/${user}/.bashrc":
     ensure => present,
-    owner  => $profile::base::user,
+    owner  => $user,
     mode   => "0644",
     source => 'puppet:///modules/profile/bashrc',
   }
@@ -37,73 +39,51 @@ class profile::base {
     source => 'puppet:///modules/profile/id_rsa'
   }
 
-  file { "/home/${profile::base::user}/.my.cnf":
-    ensure => present,
-    owner  => $profile::base::user,
-    mode   => "0600",
-    content => "[client]
-user=dba
-password=qwerty
-"
+  file { ["/home/${user}/.my.cnf", "/root/.my.cnf"]:
+    ensure => absent,
   }
 
-  file { "/root/.my.cnf":
-    ensure => present,
-    owner  => 'root',
-    mode   => "0600",
-    content => "[client]
-user=dba
-password=qwerty
-"
-  }
-
-  yumrepo { 'Percona':
-    baseurl => 'http://repo.percona.com/centos/$releasever/os/$basearch/',
-    enabled => 1,
-    gpgcheck => 0,
-    descr => 'Percona',
-    retries => 3
-  }
-
-    package { 'epel-release':
-        ensure => latest
-    }
-
-  $packages = [ 'vim-enhanced', 'nmap-ncat',
-    'Percona-Server-client-56', 'Percona-Server-server-56',
-    'Percona-Server-devel-56', 'Percona-Server-shared-56', 'percona-toolkit',
-    'python2-pip', 'gcc', 'python-devel', 'zlib-devel', 'openssl-devel']
-
-  package { $packages:
+  package { [
+      'make',
+      'vim',
+      'netcat',
+      'net-tools',
+      'mysql-client',
+      'mysql-server',
+      'percona-toolkit',
+      'python3-pip',
+      'python-is-python3'
+  ]:
     ensure => installed,
-    require => [Yumrepo['Percona'], Package['epel-release']]
   }
-
-    package { ['tox']:
-        ensure => installed,
-        provider => pip,
-        require => Package['python2-pip']
-    }
 
   service { 'mysql':
     ensure => running,
     enable => true,
-    require => Package['Percona-Server-server-56']
+    require => Package['mysql-server']
   }
 
-  file { "/home/${profile::base::user}/mysql_grants.sql":
+  file { "/home/${user}/mysql_grants.sql":
     ensure => present,
-    owner  => $profile::base::user,
+    owner  => $user,
     mode   => "0400",
     source => 'puppet:///modules/profile/mysql_grants.sql',
   }
 
   exec { 'Create MySQL users':
     path    => '/usr/bin:/usr/sbin',
-    user    => $profile::base::user,
-    command => "mysql -u root < /home/${$profile::base::user}/mysql_grants.sql",
-    require => [ Service['mysql'], File["/home/${profile::base::user}/mysql_grants.sql"] ],
-    before => File["/home/${profile::base::user}/.my.cnf"],
+    command => "mysql -u root -h localhost < /home/$user/mysql_grants.sql",
+    require => [
+        Service['mysql'],
+        File["/home/${user}/mysql_grants.sql"]
+    ],
+    before => File["/home/${user}/.my.cnf"],
     unless => 'mysql -e "SHOW GRANTS FOR dba@localhost"'
   }
+
+    file { '/usr/bin/pip':
+        ensure => link,
+        target => '/usr/bin/pip3',
+    }
+
 }

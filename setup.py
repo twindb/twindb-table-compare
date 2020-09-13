@@ -15,7 +15,7 @@ with open("requirements_dev.txt") as f:
 
 setup(
     name="twindb_table_compare",
-    version="2.0.0",
+    version="3.0.0",
     description=(
         "TwinDB Table Compare reads percona.checksums from the master and slave "
         "and shows what records are difference if there are any inconsistencies."
@@ -27,7 +27,7 @@ setup(
     packages=["twindb_table_compare"],
     package_dir={"twindb_table_compare": "twindb_table_compare"},
     entry_points={
-        "console_scripts": ["twindb_table_compare=twindb_table_compare.cli:main"]
+        "console_scripts": ["twindb-table-compare=twindb_table_compare.cli:main"]
     },
     include_package_data=True,
     install_requires=requirements,
