@@ -274,11 +274,11 @@ def primary_exists(conn, db, tbl):
 
 def get_boundary_clause(oper=">", index_fields=None, boundaries=None):
     """
-    Generate a clause for the WHERE statement based on field names and values
+    Generate a clause for the WHERE statement based on field names and values.
 
-    :param oper: Can be either ``<`` for the lower boundary or ``>``
-    for the upper boundary
-    :param index_fields: list of fields in the index
+    :param oper: Can be either ``<`` for the lower boundary
+        or ``>`` for the upper boundary.
+    :param index_fields: list of fields in the index.
     :type index_fields: list
     :param boundaries: list of values for a boundary.
     :type boundaries: list
@@ -317,15 +317,15 @@ def get_boundary_clause(oper=">", index_fields=None, boundaries=None):
 def get_where(lower_boundary, upper_boundary, index_fields):
     """
     Generate WHERE clause based on strings ``lower_boundary``,
-    ``upper_boundary`` from percona.checksums table and fields in the index
+    ``upper_boundary`` from ``percona.checksums`` table and fields in the index.
 
-    :param lower_boundary: values of lower boundary
+    :param lower_boundary: values of lower boundary.
     :type lower_boundary: str
-    :param upper_boundary: values of upper boundary
+    :param upper_boundary: values of upper boundary.
     :type upper_boundary: str
-    :param index_fields: list of fields in the index that was used
-    to access a chunk
-    :return: a WHERE clause to read a chunk
+    :param index_fields: list of fields in the index that was used.
+        to access a chunk.
+    :return: a WHERE clause to read a chunk.
     :rtype: str
     """
 
@@ -578,7 +578,7 @@ def get_inconsistent_tables(host, user, password, ch_db="percona", ch_tbl="check
     :param ch_db: Database where checksums are stored.
     :param ch_tbl: Table name where checksums are stored.
     :return: List of tuples with inconsistent tables.
-    Each tuple is database name, table name
+        Each tuple is database name, table name.
     :rtype: list
     """
     conn = connect(host=host, user=user, passwd=password)

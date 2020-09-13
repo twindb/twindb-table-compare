@@ -5,6 +5,11 @@ Installation
 ============
 
 
+Supported Python versions
+-------------------------
+
+* Python 3.6, 3.7, and 3.8 are supported.
+
 Stable release
 --------------
 
@@ -12,7 +17,7 @@ To install TwinDB Table Compare, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install twindb_table_compare
+    $ pip install twindb-table-compare
 
 This is the preferred method to install TwinDB Table Compare, as it will always install the most recent stable release.
 
@@ -32,13 +37,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/twindb/twindb_table_compare
+    $ git clone https://github.com/twindb/twindb-table-compare.git
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/twindb/twindb_table_compare/tarball/master
+    $ curl  -OL https://github.com/twindb/twindb-table-compare/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +52,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/twindb/twindb_table_compare
-.. _tarball: https://github.com/twindb/twindb_table_compare/tarball/master
+.. _Github repo: https://github.com/twindb/twindb-table-compare
+.. _tarball: https://github.com/twindb/twindb-table-compare/tarball/master
